@@ -46,6 +46,7 @@ app.get('/api/*', (res, req) => {
 			console.log(check)
 			res.end(JSON.stringify({name: check}))
 		})
+
 	res.onAborted( () => {
 		console.log('aborted')
 	})
@@ -88,9 +89,6 @@ app.post('/register', (res, req) => {
 	res.onAborted(() => {
 		console.log('abort post to /register (thats all we know)')
 	})
-//res.writeStatus('302 Found')
-//res.writeHeader('Location', '/')
-//res.end()
 })
 
 app.get('/login', (res, req) => {
@@ -110,6 +108,9 @@ app.post('/login', (res, req) => {
 			console.log(name, password)
 			
 		}
+	})
+	res.onAborted(() => {
+		console.log('aborted post to /login')
 	})
 	console.log('login posted')	
 	res.writeStatus('302 Found')

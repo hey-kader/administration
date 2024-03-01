@@ -32,8 +32,7 @@
 			console.log('form submit')
 			const form_data = new FormData(event.target)
 			const form_obj = {}
-			form_obj[name] = form_data[username]
-			form_obj
+			form_obj[name] = form_data['name']
 			console.log('form', form_obj)
 
 			fetch(window.location.href, {
@@ -47,8 +46,37 @@
 				.then(data => console.log(data))
 
 		}
+		function onnameinputblur (event) {
+			if (!event.target.value) {
+				console.log('empty username field')
+			}
+			else {
+			console.log(event.target.value)
+			fetch ('/api/'+event.target.value, {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			}).then(res => res.json())
+				.then((data) => {
+					console.log(data.name)
+					if (data.name === true) {
+						document.body.querySelector("input[type='text']").setAttribute('disabled', 'true')
+						document.body.querySelector("code").textContent = ""
+						document.body.querySelector("input[type='text']").style.color = "lightgreen"
+					}
+					else {
+						document.body.querySelector("input[type='text']").removeAttribute('disabled')
+						document.body.querySelector("input[type='text']").style.color = "orange"
+						document.body.querySelector("input[type='text']").focus()
+						document.body.querySelector("code").textContent = "(user does not exist)"
+					}
+				})
+			}
+		}
 		window.addEventListener('DOMContentLoaded', (event) => {
-			document.body.querySelector("form").addEventListener('submit', onformsubmit)
+			document.body.querySelector("form").addEventListener('submit', onformsubmission)
+			document.body.querySelector("input[type='text']").addEventListener('blur', onnameinputblur)
 		})
 	</script>
 </head>
@@ -64,6 +92,7 @@
 			<label for="password"> <input type="password" placeholder="password" name="password" /> </label>
 			<input type="submit"/>
 		</form>
+		<code id="response-info"></code>
 	</dialog>
 </body>
 </html>

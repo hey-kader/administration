@@ -57,7 +57,7 @@ async function fetch_all_users () {
 }
 
 async function checkName (name) {
-	const sql = "SELECT name FROM users WHERE name = $1"
+	const sql = "SELECT name,digest FROM users WHERE name = $1"
 	try {
 		const result = await pool.query(sql, [name])
 		if (result.rows[0]) {
