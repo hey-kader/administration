@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>login</title>
+	<style>
+		html {
+			font-family: system-ui;
+			height: 100vh;
+			margin: auto;
+		}
+		dialog {
+			display: table;
+			align-items: center;
+			border: none;
+			border-radius: 5px;
+			background: lightgray;
+		}
+		label {
+			display: table-row;
+		}
+		input {
+			float: right;
+		}
+		input[type="submit"] {
+			margin-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<a href="..">back</a>
+	<dialog open>
+		<form action="/login" method="post" enctype="multipart/form-data">
+			<legend>login</legend>
+			<label for="username"> <input type="text" placeholder="username" name="username" /> </label>
+			<label for="password"> <input type="password" placeholder="password" name="password" /> </label>
+			<input type="submit"/>
+		</form>
+	</dialog>
+</body>
+</html>

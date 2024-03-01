@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>login or register</title>
+	<style>
+		html {
+			font-family: system-ui;
+		}
+		form {
+			display: table;
+		}
+		label {
+			display: table-row;
+		}
+		input[type="text"], input[type="email"] {
+			margin-left: 10px;
+		}
+		input {
+			float: right;
+		}
+		input[type="submit"] {
+			margin-top: 4px;
+		}
+		dialog {
+			border: none;
+			border-radius: 5px;
+			background: lightgray;
+		}
+	</style>
+</head>
+<body>
+	<a href="..">back</a>
+	<dialog open>
+		<form action="/register" method="POST" enctype="multipart/form-data">
+			<legend>register</legend>
+			<label for="username">username: <input type="text" name="username"/> </label>
+			<label for="email">email: <input type="email" name="email" /> </label>
+			<label for="password"> password: <input name="password" type="password" required /> </label>
+			<label for="confirm"> confirm: <input name="confirm" type="password" required /> </label>
+			<input type="submit" value="register" />
+		</form>
+	</dialog>
+</body>
+</html>
