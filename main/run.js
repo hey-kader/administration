@@ -2,23 +2,9 @@ const fs = require ("node:fs")
 
 const register = fs.readFileSync("html/register.html")
 const login    = fs.readFileSync("html/login.html")
+const home     = fs.readFileSync("html/index.html")
 
-let home = `
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>home</title>
-	</head>
-	<body>
-		<nav>
-			<a href="/login">login</a>
-			<a href="/register">register</a>
-		<nav>
-	</body>
-</html>
-`
-
-const App = require("./node/uws_darwin_arm64_115").SSLApp
+const App = require("./bin/uws_darwin_arm64_115").SSLApp
 const app = App ({
 	cert_file_name: "./.ssl/localhost.pem",
 	key_file_name: "./.ssl/localhost.pem.key"
