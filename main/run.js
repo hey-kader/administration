@@ -3,6 +3,7 @@ const fs = require ("node:fs")
 const register = fs.readFileSync("html/register.html")
 const login    = fs.readFileSync("html/login.html")
 const home     = fs.readFileSync("html/index.html")
+const base     = fs.readFileSync("html/base.html")
 
 const db = require ("./db/db.js")
 //console.log(db)
@@ -38,6 +39,11 @@ app.get('/auth/*', (res, req) => {
 })
 
 app.get('/base', (res, req) => {
+	res.writeHeader('content-type', 'text/html')
+	res.end(base)
+})
+
+app.get('/base/stat', (res, req) => {
 	res.writeHeader("content-type", "application/json")
 	db.allUsers()
 		.then((users) => {
