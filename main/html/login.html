@@ -26,11 +26,39 @@
 			margin-top: 10px;
 		}
 	</style>
+	<script>
+		function onformsubmission (event) {
+			event.preventDefault()
+			console.log('form submit')
+			const form_data = new FormData(event.target)
+			const form_obj = {}
+			form_obj[name] = form_data[username]
+			form_obj
+			console.log('form', form_obj)
+
+			fetch(window.location.href, {
+				method: 'post',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify(form_obj)
+			})
+			.then(response => response.json())
+				.then(data => console.log(data))
+
+		}
+		window.addEventListener('DOMContentLoaded', (event) => {
+			document.body.querySelector("form").addEventListener('submit', onformsubmit)
+		})
+	</script>
 </head>
 <body>
-	<a href="..">back</a>
+	<nav>
+		<a href="..">..</a>
+		<a href="/register">register</a>
+	</nav>
 	<dialog open>
-		<form action="/login" method="post" enctype="multipart/form-data">
+		<form action="/login" method="post" enctype="text">
 			<legend>login</legend>
 			<label for="username"> <input type="text" placeholder="username" name="username" /> </label>
 			<label for="password"> <input type="password" placeholder="password" name="password" /> </label>

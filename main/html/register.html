@@ -27,12 +27,140 @@
 			border-radius: 5px;
 			background: lightgray;
 		}
+		input[type="password"]:focus {
+			-webkit-text-security: square;
+		}
+		code {
+			word-wrap: break-word;
+		}
 	</style>
+	<script>
+		async function digest (password) {
+			const encoder = new TextEncoder()
+			const data = encoder.encode(password)
+			const hash = await window.crypto.subtle.digest('SHA-256', data)
+			return hash
+		}
+		function onnameinput (event) {
+			console.log(event.target.value)
+			fetch('/api/'+event.target.value, {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			})
+			.then(res=>res.json())
+			.then((data)=>{
+				console.log(data)
+				if (data.name === true) {
+					event.target.style.color = "orange"
+					document.body.querySelector("code").textContent = "sorry, that username is taken"
+					document.body.querySelector('input[type="submit"]').setAttribute('disabled', 'true')
+				}
+				else {
+					event.target.style.color = "dodgerblue"
+					if (document.body.querySelector('input[type="email"]').style.color !== 'orange') {
+						document.body.querySelector('input[type="submit"]').removeAttribute('disabled')
+					}
+					document.body.querySelector('code').textContent = ''
+				}
+			})
+		}
+		function onpasswordconfirminput (event) {
+			if (document.body.querySelector('input[type="password"]').value === event.target.value) {
+				console.log('good to go, they match')
+				document.body.querySelectorAll("input[type='password']").forEach((element) => {
+					element.style.color = "dodgerblue"
+				})
+			}
+			else {
+				document.body.querySelector("input[type='submit']").setAttribute('disabled', 'true')
+				document.body.querySelectorAll("input[type='password']").forEach((element) => {
+					element.style.color = "orange"
+				})
+			}
+		}
+
+		function onpasswordinput (event) {
+			if (document.body.querySelector('input[name="confirm"]').value === event.target.value) {
+				console.log('match')
+				document.body.querySelectorAll("input[type='password']").forEach((element) => {
+					element.style.color = "dodgerblue"
+				})
+			}
+		}
+
+		function onemailinput (event) {
+			console.log(event.target.value)
+			fetch('/register/'+event.target.value, {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				},
+			}).then((res) => res.json())	
+				.then((data)=> {
+					console.log(data)
+					if (data.email === true) {
+						document.body.querySelector('input[type="submit"]').setAttribute('disabled', 'true')
+						event.target.style.color = 'orange'
+						document.body.querySelector('code').textContent = "we have an existing accountunder that email, try 'forgot my password'"
+					}
+					else {
+						if (document.body.querySelector('input[type="text"]').style.color !== 'orange') {
+							document.body.querySelector('input[type="submit"]').removeAttribute('disabled')
+						}
+						event.target.style.color = 'dodgerblue'
+						document.body.querySelector('#response-info').textContent = ''
+					}
+				})
+			}
+		function registeronsubmit (event) {
+			event.preventDefault()
+			console.log(event)
+			const form = document.body.querySelector('form')
+			console.log(form)
+			const name = form.querySelector('input[type="text"]').value	
+			console.log(name)
+			const email = form.querySelector('input[type="email"]').value
+			console.log(email)
+			const password = form.querySelector('input[type="password"]').value
+			console.log(password)
+			digest(password)
+				.then((result)=> {
+					const hash_array = Array.from(new Uint8Array(result))
+					const hash_hex = hash_array.map(b => b.toString(16).padStart(2, "0")).join('')
+					console.log(hash_hex)
+					const body = {
+						name: name,
+						email: email,
+						digest: hash_hex
+					}
+					fetch('/register', {
+						method: "post",
+						headers: {
+							"content-type": "application/json"
+						},
+						body: JSON.stringify(body)
+					})
+					.then(res => res.json())
+				})
+		}
+		document.addEventListener('DOMContentLoaded', (event) => {
+			document.body.querySelector('form').addEventListener('submit', registeronsubmit)
+			document.body.querySelector('input[type="email"]').addEventListener('input', onemailinput)
+			document.body.querySelector('input[type="text"]').addEventListener('input', onnameinput)
+			document.body.querySelector('input[name="confirm"]').addEventListener('input', onpasswordconfirminput)
+			document.body.querySelector('input[name="password"]').addEventListener('input', onpasswordinput)
+		})
+	</script>
 </head>
 <body>
-	<a href="..">back</a>
+	<nav>
+		<a href="..">..</a>
+		<a href="/login">login</a>
+	</nav>
 	<dialog open>
-		<form action="/register" method="POST" enctype="multipart/form-data">
+		<form action="/register" method="POST">
 			<legend>register</legend>
 			<label for="username">username: <input type="text" name="username"/> </label>
 			<label for="email">email: <input type="email" name="email" /> </label>
@@ -40,6 +168,7 @@
 			<label for="confirm"> confirm: <input name="confirm" type="password" required /> </label>
 			<input type="submit" value="register" />
 		</form>
+		<code id="response-info"></code>
 	</dialog>
 </body>
 </html>
