@@ -82,11 +82,11 @@
 		}
 
 		function onpasswordinput (event) {
-			if (document.body.querySelector('input[name="confirm"]').value === event.target.value) {
+			if (document.body.querySelector('input[name="password"]').value === event.target.value) {
 				console.log('match')
-				document.body.querySelectorAll("input[type='password']").forEach((element) => {
-					element.style.color = "dodgerblue"
-				})
+				if (document.body.querySelector('input[type="email"]').style.color === 'dodgerblue' && document.body.querySelector('input[type="text"]').style.color === 'dodgerblue') {
+					document.body.querySelector('input[type="submit"]').removeAttribute('disabled')
+				}
 			}
 		}
 

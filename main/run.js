@@ -81,6 +81,7 @@ app.post('/register', (res, req) => {
 							.then((r) => {
 								if (r === false) {
 									console.log('safe to enter in db')
+									db.newUser(j.name, j.email, j.digest)
 								}
 							})
 					}
