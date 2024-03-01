@@ -146,6 +146,7 @@
 					.then(res => res.json())
 					.then((data) => {
 						console.log(data)
+						window.sessionStorage.setItem("name", data.name)
 						window.location.href="https://localhost/login"
 					})
 				})

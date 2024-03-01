@@ -88,6 +88,17 @@ async function checkEmail (email) {
 	}
 }
 
+async function getDigest (name) {
+	const sql = "SELECT digest FROM users WHERE name = $1"
+	try {
+		const result = await pool.query(sql, [name])
+		console.log(result.rows[0])
+		return result.rows[0]
+	}
+	catch (error) {
+		console.error("failed to get digest from name. e", error)
+	}
+}
 
 const users = fetch_all_users()
 	.then((response) => {
@@ -100,4 +111,5 @@ module.exports = {
   allUsers: fetch_all_users,
 	checkName: checkName,
 	checkEmail: checkEmail,
+	getDigest: getDigest
 }

@@ -24,6 +24,30 @@ app.get('/register', (res, req) => {
 	res.end(register)
 })
 
+app.get('/auth/*', (res, req) => {
+	let name = req.getUrl().split('/')[2]
+	console.log(name)
+	db.getDigest(name)
+		.then((result) => {
+			console.log('digest',result)
+			res.end(JSON.stringify(result))
+		})
+	res.onAborted(()=> {
+		console.log('abort /auth/:name')
+	})
+})
+
+app.get('/base', (res, req) => {
+	res.writeHeader("content-type", "application/json")
+	db.allUsers()
+		.then((users) => {
+			res.end(JSON.stringify({users: users}))
+		})
+	res.onAborted(() => {
+		console.log('abort')
+	})
+})
+
 function db_check_email (email) {
 	db.checkEmail(email)
 		.then((result) => {
