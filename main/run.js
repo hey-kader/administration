@@ -4,7 +4,11 @@ const register = fs.readFileSync("html/register.html")
 const login    = fs.readFileSync("html/login.html")
 const home     = fs.readFileSync("html/index.html")
 
+const db = require ("./db/db.js")
+//console.log(db)
+
 const App = require("./bin/uws_darwin_arm64_115").SSLApp
+
 const app = App ({
 	cert_file_name: "./.ssl/localhost.pem",
 	key_file_name: "./.ssl/localhost.pem.key"
@@ -16,8 +20,51 @@ app.any('/*', (res, req) => {
 })
 
 app.get('/register', (res, req) => {
+	const users = db.allUsers()
+		.then((result) => {
+			console.log(result)
+		})
 	res.writeHeader('content-type', 'text/html')
 	res.end(register)
+})
+
+function db_check_email (email) {
+	db.checkEmail(email)
+		.then((result) => {
+			return result
+		})
+}
+
+function db_check_name (name) {
+	db.checkName(name)
+		.then((result) => {
+			return result
+		})
+}
+
+app.get('/api/*', (res, req) => {
+	let name = req.getUrl().split('/')[2]
+	console.log(name)
+	db.checkName(name)
+		.then((check) => {
+			console.log(check)
+			res.end(JSON.stringify({name: check}))
+		})
+	res.onAborted( () => {
+		console.log('aborted')
+	})
+})
+
+app.get('/register/*', (res, req) => {
+	let email = req.getUrl().split('/')[2]
+	db.checkEmail(email)
+		.then((check) => {
+			console.log(check)
+			res.end(JSON.stringify({email: check}))
+		})
+	res.onAborted (() => {
+		console.log('aborted')
+	})
 })
 
 app.post('/register', (res, req) => {
@@ -25,7 +72,21 @@ app.post('/register', (res, req) => {
 	res.onData ((chunk, isLast) => {
 		buffer.push(Buffer.from(chunk).toString())
 		if (isLast) {
-			console.log(buffer)
+			const j = JSON.parse(buffer.join(''))
+			console.log(j)
+			db.checkEmail(j.email)
+				.then((result) => {
+					if (result === false) {
+						db.checkName(j.name)
+							.then((r) => {
+								if (r === false) {
+									console.log('safe to enter in db')
+								}
+							})
+					}
+				})
+			//db.newUser(j.name, j.email, j.digest)
+
 		}
 	})
 	res.writeStatus('302 Found')
@@ -42,7 +103,13 @@ app.post('/login', (res, req) => {
 	res.onData((chunk, isLast) => {
 		buffer.push(Buffer.from(chunk).toString())
 		if (isLast) {
-			console.log(buffer)
+			console.log(buffer.join('').split('&'))
+			// digest password and use db.newUser(name, digest, email)
+			let [name, password] = buffer.join('').split('&')
+			name = name.split('=')[1]
+			password = password.split('=')[1]
+			console.log(name, password)
+			
 		}
 	})
 	console.log('login posted')	
