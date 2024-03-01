@@ -1,3 +1,4 @@
 .ssl/*
 main/db/sql.log
 main/db/node_modules/*
+main/db/.env

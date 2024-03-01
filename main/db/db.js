@@ -1,12 +1,13 @@
+require ("dotenv").config()
 const pg = require ("pg")
 const fs = require ("node:fs")
 
 const pool = new pg.Pool({
-	username: "postgres",
-	password: "kasd",
-	host: "localhost",
-	database: "main",
-	port: 5432
+	username: process.env.pg_username,
+	password: process.env.pg_password,
+	host: process.env.pg_host,
+	database: process.env.pg_database,
+	port: process.env.pg_port
 })
 
 if (!fs.existsSync('./db/sql.log')) {
