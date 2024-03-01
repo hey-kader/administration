@@ -29,6 +29,34 @@ else {
 	console.log('table users existential check ok ...')
 }
 
+if (!fs.existsSync('./db/posts.sql.log')) {
+	const posts_table_init = `CREATE TABLE posts (
+		name VARCHAR(255) NOT NULL,
+		text VARCHAR(2048) NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);`
+	pool.query(posts_table_init)
+		.then((e) => {
+			console.log(e)
+			fs.writeFileSync('./db/posts.sql.log', 'OK')
+		})
+}
+else {
+	console.log('posts table has already been created')
+}
+
+
+function newPost(name, text) {
+	const sql = `INSERT INTO posts(name, text) VALUES($1, $2) RETURNING *`
+	try {
+		pool.query(sql, [name, text])
+			.then((res) => {
+				console.log('new post insertion ok', res)
+			})
+	}
+	catch (error) {
+		console.error('caught error making a new post, e: ', error)
+	}
+}
 
 function newUser (name, email, digest) {
 	const sql = `INSERT INTO users(name, digest, email) VALUES($1, $2, $3) RETURNING *`
@@ -111,5 +139,6 @@ module.exports = {
   allUsers: fetch_all_users,
 	checkName: checkName,
 	checkEmail: checkEmail,
-	getDigest: getDigest
+	getDigest: getDigest,
+	newPost: newPost
 }

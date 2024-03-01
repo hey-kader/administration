@@ -50,9 +50,20 @@
 				})
 		})
 		document.addEventListener("load", (event) => {
-			document.body.querySelector("a").addEventListener("click", ((ev) => {
-			}))
-		})
+				document.body.querySelector("input[type='button']").addEventListener("click", (event) => {
+				console.log('click', event)
+					fetch("/post", {
+						method: "post",
+						headers: {
+							"content-type": "application/json"
+						},
+						body: JSON.stringify({
+							name: window.localStorage.getItem("name"),
+							text: document.body.querySelector("textarea").textContent
+						})
+					})
+				})
+			})
 		
 	</script>
 </head>

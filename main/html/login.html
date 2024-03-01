@@ -64,6 +64,7 @@
 						document.body.querySelector("input[type='text']").setAttribute('disabled', 'true')
 						document.body.querySelector("code").textContent = ""
 						document.body.querySelector("input[type='text']").style.color = "lightgreen"
+						window.localStorage.setItem("name", document.body.querySelector("input[type='text']").value)
 					}
 					else {
 						document.body.querySelector("input[type='text']").removeAttribute('disabled')
