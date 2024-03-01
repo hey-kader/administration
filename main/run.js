@@ -20,10 +20,6 @@ app.any('/*', (res, req) => {
 })
 
 app.get('/register', (res, req) => {
-	const users = db.allUsers()
-		.then((result) => {
-			console.log(result)
-		})
 	res.writeHeader('content-type', 'text/html')
 	res.end(register)
 })
@@ -79,20 +75,22 @@ app.post('/register', (res, req) => {
 					if (result === false) {
 						db.checkName(j.name)
 							.then((r) => {
-								if (r === false) {
+								if (result === false && r === false) {
 									console.log('safe to enter in db')
 									db.newUser(j.name, j.email, j.digest)
+									res.end(JSON.stringify(j))
 								}
 							})
 					}
-				})
-			//db.newUser(j.name, j.email, j.digest)
-
+			})
 		}
 	})
-	res.writeStatus('302 Found')
-	res.writeHeader('Location', '/')
-	res.end()
+	res.onAborted(() => {
+		console.log('abort post to /register (thats all we know)')
+	})
+//res.writeStatus('302 Found')
+//res.writeHeader('Location', '/')
+//res.end()
 })
 
 app.get('/login', (res, req) => {
