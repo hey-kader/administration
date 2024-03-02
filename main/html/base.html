@@ -124,10 +124,16 @@
 									let txtbody = document.createElement('p')
 									txtbody.textContent = post.text
 									node.appendChild(txtbody)
-									let dt = document.createElement('code')
-									dt.textContent = post.created_at
+									let dt = document.createElement('time')
+									function dtupdate () {
+										Array.from(document.querySelectorAll('time')).forEach((element) => {
+											console.log(element)
+											dt.textContent = Math.round((Date.now() - new Date(post.created_at) )/1000)
+										})
+									}
+									let interval = setInterval(dtupdate, 1000)
 									node.appendChild(dt)
-									document.body.querySelector('#post-aggregation').appendChild(node)
+									document.body.querySelector('#post-aggregation').append(node)
 								})
 							})
 					})
@@ -156,6 +162,12 @@
 								body: JSON.stringify(bod)
 							})
 						})	
+					})
+
+					document.addEventListener("DOMContentLoaded" , (event) => {
+						document.body.querySelector("section#post-aggregation").children.forEach((child) => {
+							document.body.querySelector('section').lastElementChild.append(child)
+						})
 					})
 		
 	</script>
