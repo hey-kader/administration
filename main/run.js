@@ -3,6 +3,7 @@ const fs = require ("node:fs")
 const register = fs.readFileSync("html/register.html")
 const login    = fs.readFileSync("html/login.html")
 const home     = fs.readFileSync("html/index.html")
+const base     = fs.readFileSync("html/base.html")
 
 const db = require ("./db/db.js")
 //console.log(db)
@@ -20,12 +21,63 @@ app.any('/*', (res, req) => {
 })
 
 app.get('/register', (res, req) => {
-	const users = db.allUsers()
-		.then((result) => {
-			console.log(result)
-		})
 	res.writeHeader('content-type', 'text/html')
 	res.end(register)
+})
+
+app.get('/latest', (res, req) => {
+	db.allPosts()	
+		.then((data) => {
+			console.log('latest',data)
+			res.end(JSON.stringify({data: data}))
+		})
+		res.onAborted (() => {
+			console.log('aborted /latest get')
+		})
+})
+
+app.get('/auth/*', (res, req) => {
+	let name = req.getUrl().split('/')[2]
+	console.log(name)
+	db.getDigest(name)
+		.then((result) => {
+			console.log('digest',result)
+			res.end(JSON.stringify(result))
+		})
+	res.onAborted(()=> {
+		console.log('abort /auth/:name')
+	})
+})
+
+app.get('/base', (res, req) => {
+	res.writeHeader('content-type', 'text/html')
+	res.end(base)
+})
+
+app.post('/base', (res, req) => {
+	console.log("share")
+	let buffer = []
+	res.onData((chunk, last) => {
+		buffer.push(Buffer.from(chunk).toString())	
+		console.log(buffer)
+		if (last) {
+			 const j = JSON.parse(buffer.join(''))
+			 db.newPost(j.name, j.text)
+		}
+	})
+	res.end()
+})
+
+
+app.get('/base/stat', (res, req) => {
+	res.writeHeader("content-type", "application/json")
+	db.allUsers()
+		.then((users) => {
+			res.end(JSON.stringify({users: users}))
+		})
+	res.onAborted(() => {
+		console.log('abort')
+	})
 })
 
 function db_check_email (email) {
@@ -50,6 +102,7 @@ app.get('/api/*', (res, req) => {
 			console.log(check)
 			res.end(JSON.stringify({name: check}))
 		})
+
 	res.onAborted( () => {
 		console.log('aborted')
 	})
@@ -79,19 +132,19 @@ app.post('/register', (res, req) => {
 					if (result === false) {
 						db.checkName(j.name)
 							.then((r) => {
-								if (r === false) {
+								if (result === false && r === false) {
 									console.log('safe to enter in db')
+									db.newUser(j.name, j.email, j.digest)
+									res.end(JSON.stringify(j))
 								}
 							})
 					}
-				})
-			//db.newUser(j.name, j.email, j.digest)
-
+			})
 		}
 	})
-	res.writeStatus('302 Found')
-	res.writeHeader('Location', '/')
-	res.end()
+	res.onAborted(() => {
+		console.log('abort post to /register (thats all we know)')
+	})
 })
 
 app.get('/login', (res, req) => {
@@ -111,6 +164,9 @@ app.post('/login', (res, req) => {
 			console.log(name, password)
 			
 		}
+	})
+	res.onAborted(() => {
+		console.log('aborted post to /login')
 	})
 	console.log('login posted')	
 	res.writeStatus('302 Found')

@@ -69,9 +69,10 @@
 		function onpasswordconfirminput (event) {
 			if (document.body.querySelector('input[type="password"]').value === event.target.value) {
 				console.log('good to go, they match')
-				document.body.querySelectorAll("input[type='password']").forEach((element) => {
-					element.style.color = "dodgerblue"
-				})
+				if (document.body.querySelector('input[type="email"]').style.color !== 'orange' && 
+					document.body.querySelector('input[type="text"]').style.color !== 'orange') {
+						document.body.querySelector("input[type='submit']").removeAttribute('disabled')
+				}
 			}
 			else {
 				document.body.querySelector("input[type='submit']").setAttribute('disabled', 'true')
@@ -82,11 +83,11 @@
 		}
 
 		function onpasswordinput (event) {
-			if (document.body.querySelector('input[name="confirm"]').value === event.target.value) {
+			if (document.body.querySelector('input[name="password"]').value === event.target.value) {
 				console.log('match')
-				document.body.querySelectorAll("input[type='password']").forEach((element) => {
-					element.style.color = "dodgerblue"
-				})
+				if (document.body.querySelector('input[type="email"]').style.color === 'dodgerblue' && document.body.querySelector('input[type="text"]').style.color === 'dodgerblue') {
+					document.body.querySelector('input[type="submit"]').removeAttribute('disabled')
+				}
 			}
 		}
 
@@ -143,6 +144,11 @@
 						body: JSON.stringify(body)
 					})
 					.then(res => res.json())
+					.then((data) => {
+						console.log(data)
+						window.sessionStorage.setItem("name", data.name)
+						window.location.href="https://localhost/login"
+					})
 				})
 		}
 		document.addEventListener('DOMContentLoaded', (event) => {
@@ -150,7 +156,6 @@
 			document.body.querySelector('input[type="email"]').addEventListener('input', onemailinput)
 			document.body.querySelector('input[type="text"]').addEventListener('input', onnameinput)
 			document.body.querySelector('input[name="confirm"]').addEventListener('input', onpasswordconfirminput)
-			document.body.querySelector('input[name="password"]').addEventListener('input', onpasswordinput)
 		})
 	</script>
 </head>
@@ -166,7 +171,7 @@
 			<label for="email">email: <input type="email" name="email" /> </label>
 			<label for="password"> password: <input name="password" type="password" required /> </label>
 			<label for="confirm"> confirm: <input name="confirm" type="password" required /> </label>
-			<input type="submit" value="register" />
+			<input type="submit" value="register" disabled />
 		</form>
 		<code id="response-info"></code>
 	</dialog>

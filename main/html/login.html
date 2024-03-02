@@ -32,8 +32,7 @@
 			console.log('form submit')
 			const form_data = new FormData(event.target)
 			const form_obj = {}
-			form_obj[name] = form_data[username]
-			form_obj
+			form_obj[name] = form_data['name']
 			console.log('form', form_obj)
 
 			fetch(window.location.href, {
@@ -47,8 +46,78 @@
 				.then(data => console.log(data))
 
 		}
+		function onnameinputblur (event) {
+			if (!event.target.value) {
+				console.log('empty username field')
+			}
+			else {
+			console.log(event.target.value)
+			fetch ('/api/'+event.target.value, {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			}).then(res => res.json())
+				.then((data) => {
+					console.log(data.name)
+					if (data.name === true) {
+						document.body.querySelector("input[type='text']").setAttribute('disabled', 'true')
+						document.body.querySelector("code").textContent = ""
+						document.body.querySelector("input[type='text']").style.color = "lightgreen"
+						window.localStorage.setItem("name", document.body.querySelector("input[type='text']").value)
+					}
+					else {
+						document.body.querySelector("input[type='text']").removeAttribute('disabled')
+						document.body.querySelector("input[type='text']").style.color = "orange"
+						document.body.querySelector("input[type='text']").focus()
+						document.body.querySelector("code").textContent = "(user does not exist)"
+					}
+				})
+			}
+		}
+		function oninputchange (event) {
+		}
+		async function digest (password) {
+			const encoder = new TextEncoder()
+			const data = encoder.encode(password)
+			const hash = await window.crypto.subtle.digest('SHA-256', data)
+			return hash
+		}
+		function onpasswordfocus (event) {
+			fetch ('/auth/'+document.body.querySelector("input[type='text']").value, {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			}).then(res => res.json())
+				.then((data) => {
+					console.log(data.digest)
+					document.body.querySelector("input[type='password']").addEventListener('input', (event) => {
+						// hash event.target.value and compare it to data.digest on each input event.
+						// if event.target.value === data.digest, remove the disabled attribute from the submit type form input
+						digest(event.target.value)
+							.then((result) => {
+								const hash_array = Array.from(new Uint8Array(result))
+								const hash_hex = hash_array.map(b => b.toString(16).padStart(2, "0")).join('')
+								if (hash_hex === data.digest) {
+									document.body.querySelector("input[type='submit']").removeAttribute('disabled')
+									document.body.querySelector("input[type='password']").style.color = "lightgreen"
+									window.location.href = "https://localhost/base"
+								}
+							})
+					})
+				})
+		}
+
 		window.addEventListener('DOMContentLoaded', (event) => {
-			document.body.querySelector("form").addEventListener('submit', onformsubmit)
+			document.body.querySelector("form").addEventListener('submit', onformsubmission)
+			document.body.querySelector("input[type='text']").addEventListener('blur', onnameinputblur)
+			document.body.querySelector("input[type='password']").addEventListener('focus', onpasswordfocus)
+			if (window.sessionStorage.getItem('name')) {
+				document.body.querySelector("input[type='text']").value = window.sessionStorage.getItem('name')
+				document.body.querySelector("input[type='text']").focus()
+				document.body.querySelector("input[type='password']").focus()
+			}
 		})
 	</script>
 </head>
@@ -62,8 +131,9 @@
 			<legend>login</legend>
 			<label for="username"> <input type="text" placeholder="username" name="username" /> </label>
 			<label for="password"> <input type="password" placeholder="password" name="password" /> </label>
-			<input type="submit"/>
+			<input type="submit"disabled />
 		</form>
+		<code id="response-info"></code>
 	</dialog>
 </body>
 </html>

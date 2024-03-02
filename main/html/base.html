@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>[base]</title>
+	<style>
+		html {
+			font-family: system-ui;
+		}
+		div {
+			display: table;
+		}
+		h2 {
+			display: table-row
+		}
+		textarea {
+			border-radius: 10px;
+			resize: none;
+			outline: none;
+			padding: 10px;
+			color: orange;
+			display: grid;
+		}
+		table {
+			display: grid;
+		}
+		table input {
+			margin-top, 10px;
+			margin-bottom: 10px;
+		}
+		
+	</style>
+	<script>
+		document.addEventListener("DOMContentLoaded", (event) => {
+			fetch("/latest", {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			}).then((res) => {
+				res.json()
+			}).then((data) => {
+				console.log(data)
+			})
+		})
+		document.addEventListener('DOMContentLoaded', (event) => {
+			fetch('/base/stat', {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			}).then(res => res.json())
+				.then((data)=> {
+					console.log(data.users)
+					Array.from(data.users).forEach((user)=> {
+						let user_slide = document.createElement('div')
+						let user_slide_name = document.createElement('h2')
+						user_slide_name.textContent = user.name
+						user_slide.appendChild(user_slide_name)
+						document.body.appendChild(user_slide)
+					})
+				})
+		})
+			window.addEventListener('load', (event) => {
+				let name = window.localStorage.getItem("name")
+				let code = document.createElement("code")
+				code.textContent = name
+				document.body.querySelector("nav").appendChild(code)
+				document.body.querySelector("input[type='submit']").addEventListener("click", (event) => {
+					event.preventDefault()
+					const body = {
+						name: window.localStorage.getItem("name"),
+						text: document.querySelector("textarea").value
+					}
+					console.log('click', event)
+						fetch("/base", {
+							method: "post",
+							headers: {
+								"content-type": "application/json"
+							},
+							body: JSON.stringify(body)
+						}).then((res) => {
+							console.log(res)
+							document.body.querySelector('textarea').value = ''
+						})
+					})
+			})
+		
+	</script>
+</head>
+<body>
+	<nav>
+		<a href="/">logout</a>
+	</nav>
+	<br />
+	<table>
+			<form action="/base" method="post">
+			<textarea name="textarea" placeholder="post!"></textarea>
+			<br />
+			<input type="submit" value="post" />
+			</form>
+	</table>
+	
+</body>
+</html>

@@ -2,12 +2,13 @@ require ("dotenv").config()
 const pg = require ("pg")
 const fs = require ("node:fs")
 
+console.log(process.env)
 const pool = new pg.Pool({
 	username: process.env.pg_username,
 	password: process.env.pg_password,
 	host: process.env.pg_host,
-	database: process.env.pg_database,
-	port: process.env.pg_port
+	port: process.env.pg_port,
+	database: process.env.pg_database
 })
 
 if (!fs.existsSync('./db/sql.log')) {
@@ -28,6 +29,51 @@ else {
 	console.log('table users existential check ok ...')
 }
 
+if (!fs.existsSync('./db/posts.sql.log')) {
+	const posts_table_init = `CREATE TABLE posts (
+		name VARCHAR(255) NOT NULL,
+		text VARCHAR(2048) NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);`
+	pool.query(posts_table_init)
+		.then((e) => {
+			console.log(e)
+			fs.writeFileSync('./db/posts.sql.log', 'OK')
+		})
+}
+else {
+	console.log('posts table has already been created')
+}
+
+
+function newPost(name, text) {
+	const sql = `INSERT INTO posts(name, text) VALUES($1, $2) RETURNING *`
+	try {
+		pool.query(sql, [name, text])
+			.then((res) => {
+				console.log('new post insertion ok', res)
+			})
+	}
+	catch (error) {
+		console.error('caught error making a new post, e: ', error)
+	}
+}
+
+async function fetch_all_posts () {
+	const sql = `SELECT * FROM posts;`
+	try {
+		pool.query(sql)
+			.then((res) => {
+				console.log(res)
+			})
+	}
+	catch (error) {
+		console.error('error here', error)
+	}
+}
+fetch_all_posts()
+	.then((res) => {
+		console.log(res)
+	})
 
 function newUser (name, email, digest) {
 	const sql = `INSERT INTO users(name, digest, email) VALUES($1, $2, $3) RETURNING *`
@@ -56,7 +102,7 @@ async function fetch_all_users () {
 }
 
 async function checkName (name) {
-	const sql = "SELECT name FROM users WHERE name = $1"
+	const sql = "SELECT name,digest FROM users WHERE name = $1"
 	try {
 		const result = await pool.query(sql, [name])
 		if (result.rows[0]) {
@@ -87,6 +133,17 @@ async function checkEmail (email) {
 	}
 }
 
+async function getDigest (name) {
+	const sql = "SELECT digest FROM users WHERE name = $1"
+	try {
+		const result = await pool.query(sql, [name])
+		console.log(result.rows[0])
+		return result.rows[0]
+	}
+	catch (error) {
+		console.error("failed to get digest from name. e", error)
+	}
+}
 
 const users = fetch_all_users()
 	.then((response) => {
@@ -99,4 +156,7 @@ module.exports = {
   allUsers: fetch_all_users,
 	checkName: checkName,
 	checkEmail: checkEmail,
+	getDigest: getDigest,
+	newPost: newPost,
+	allPosts: fetch_all_posts
 }
