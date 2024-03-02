@@ -46,7 +46,7 @@ else {
 
 
 function newPost(name, text) {
-	const sql = `INSERT INTO posts(name, text) VALUES($1, $2) RETURNING *`
+	const sql = `INSERT INTO posts(name, text) VALUES($1, $2);`
 	try {
 		pool.query(sql, [name, text])
 			.then((res) => {
@@ -59,21 +59,12 @@ function newPost(name, text) {
 }
 
 async function fetch_all_posts () {
-	const sql = `SELECT * FROM posts;`
-	try {
-		pool.query(sql)
-			.then((res) => {
-				console.log(res)
-			})
-	}
-	catch (error) {
-		console.error('error here', error)
-	}
+	const sql = `SELECT name, text, created_at FROM posts ORDER BY created_at DESC;`
+	const res = await pool.query(sql)
+	console.log(res)
+	return res
 }
-fetch_all_posts()
-	.then((res) => {
-		console.log(res)
-	})
+
 
 function newUser (name, email, digest) {
 	const sql = `INSERT INTO users(name, digest, email) VALUES($1, $2, $3) RETURNING *`

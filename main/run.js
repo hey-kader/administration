@@ -6,9 +6,11 @@ const home     = fs.readFileSync("html/index.html")
 const base     = fs.readFileSync("html/base.html")
 
 const db = require ("./db/db.js")
-//console.log(db)
 
-const App = require("./bin/uws_darwin_arm64_115").SSLApp
+const uws = require ("./bin/uws_darwin_arm64_115")
+const App =  uws.SSLApp
+
+let live_connections = new Set()
 
 const app = App ({
 	cert_file_name: "./.ssl/localhost.pem",
@@ -17,7 +19,7 @@ const app = App ({
 
 app.any('/*', (res, req) => {
 	res.writeHeader('content-type', 'text/html')
-	res.end('<h1>hi</h1>')
+	res.end('<h1>hey! out of bounds, bones.</h1>')
 })
 
 app.get('/register', (res, req) => {
@@ -26,13 +28,14 @@ app.get('/register', (res, req) => {
 })
 
 app.get('/latest', (res, req) => {
-	db.allPosts()	
-		.then((data) => {
-			console.log('latest',data)
-			res.end(JSON.stringify({data: data}))
+	const posts = db.allPosts()	
+		.then((p) => {
+			console.log("POSTS")
+			res.writeHeader('content-type', 'application/json')
+			res.end(JSON.stringify({posts: p.rows}))
 		})
-		res.onAborted (() => {
-			console.log('aborted /latest get')
+		res.onAborted(() => {
+			console.log("get / latest abort")
 		})
 })
 
@@ -61,11 +64,17 @@ app.post('/base', (res, req) => {
 		buffer.push(Buffer.from(chunk).toString())	
 		console.log(buffer)
 		if (last) {
-			 const j = JSON.parse(buffer.join(''))
-			 db.newPost(j.name, j.text)
+			 buffer = buffer.join('')
+			 console.log(buffer)
+			 const parse = JSON.parse(buffer)
+			 db.newPost(parse.name, parse.text)
+			 //res.end(JSON.stringify(buffer))
+			 // share this post in real time w online accounts
 		}
 	})
-	res.end()
+  res.onAborted(() => {
+		console.log ("post /base aborted.")
+	})
 })
 
 
@@ -172,6 +181,26 @@ app.post('/login', (res, req) => {
 	res.writeStatus('302 Found')
 	res.writeHeader('Location', '/')
 	res.end()
+})
+
+app.ws('/latest', {
+	comression: uws.SHARED_COMPRESSOR,
+	maxPayloadLength: 16*1024,
+	idleTimeout: 10,
+	open: (ws) => {
+		console.log('open syncronization socket!')
+		live_connections.add(ws)
+	},
+	message: (ws, msg, isBinary) => {
+		console.log('message received!', msg)
+		live_connections.forEach((socket) => {
+			socket.send(msg, isBinary)
+		})
+	},
+	close: (ws) => {
+		console.log('socket closed')
+		live_connections.delete(ws)
+	}
 })
 
 app.get('/', (res, req) => {

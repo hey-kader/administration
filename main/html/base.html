@@ -4,20 +4,26 @@
 	<meta charset="UTF-8">
 	<title>[base]</title>
 	<style>
+		h1,h2, h3 {
+			padding-left: 20px;
+		}
 		html {
-			font-family: system-ui;
+			font-family: -system-ui, system-ui;
+			margin: 0;
+			padding: 0;
 		}
 		div {
-			display: table;
-		}
-		h2 {
-			display: table-row
+			display: grid;
+			margin-bottom: 5px;
+			margin-top: 8px;
+			border: solid lightgray 1px;
+			border-radius: 10px;
 		}
 		textarea {
-			border-radius: 10px;
+			border-radius: 10px 10px 10px 10px;
 			resize: none;
-			outline: none;
-			padding: 10px;
+			outline: orange 2px;
+			padding: 15px 20px 15px 20px;
 			color: orange;
 			display: grid;
 		}
@@ -25,24 +31,49 @@
 			display: grid;
 		}
 		table input {
-			margin-top, 10px;
-			margin-bottom: 10px;
+			margin: 0;
+		}
+		div.flashcard {
+			background: white;
+			width: 100%;
+		}
+		code {
+			color: lightblue;
+			font-size: 10px;
+			float: right;
+		}
+		h2, h3 {
+			background: rgba(180, 200, 200, .5);
+			color: darkgray;
+			margin-left: 10px;
+			padding-left: 5px;
+			display: table-row;
+			margin-top: 0px;
+			margin-left: 0px;
+			padding: 20px 0px 20px 0px;
+			border-radius: 10px 10px 0px 0px;
+			borderbottom: solid gray 1px;
+		}
+		p {
+			padding-left: 0.5em;
+			padding-right: 0.5em;
+			padding-top: 0;
+			padding-bottom: 0;
+			border-radius: 10px;
+		}
+		input[type="submit"] {
+			background: white;
+			opacity: 60%;
+			border-radius: 18px;
+			padding: .5em;
+			border: solid lightgray 0.25px;
+		}
+		input[type="submit"]::hover, input[type="submit"]:active {
+			background: linear-gradient(to top, white, white, cyan);
 		}
 		
 	</style>
 	<script>
-		document.addEventListener("DOMContentLoaded", (event) => {
-			fetch("/latest", {
-				method: "get",
-				headers: {
-					"content-type": "application/json"
-				}
-			}).then((res) => {
-				res.json()
-			}).then((data) => {
-				console.log(data)
-			})
-		})
 		document.addEventListener('DOMContentLoaded', (event) => {
 			fetch('/base/stat', {
 				method: "get",
@@ -52,39 +83,92 @@
 			}).then(res => res.json())
 				.then((data)=> {
 					console.log(data.users)
-					Array.from(data.users).forEach((user)=> {
-						let user_slide = document.createElement('div')
-						let user_slide_name = document.createElement('h2')
-						user_slide_name.textContent = user.name
-						user_slide.appendChild(user_slide_name)
-						document.body.appendChild(user_slide)
-					})
-				})
+			})
 		})
-			window.addEventListener('load', (event) => {
-				let name = window.localStorage.getItem("name")
+			document.addEventListener('DOMContentLoaded', (event) => {
+				window.socket = new WebSocket('/latest')
+				window.socket.addEventListener('open', (event) => {
+					console.log('socket open', event)
+				})
+				window.socket.addEventListener('message', (event) => {
+					console.log('message inbound', event)
+				})
+				window.socket.addEventListener('close', (event) => {
+					console.log('socket closed!', event)
+				})
+				let name = '('+window.localStorage.getItem("name")+' logged in)'
 				let code = document.createElement("code")
 				code.textContent = name
 				document.body.querySelector("nav").appendChild(code)
-				document.body.querySelector("input[type='submit']").addEventListener("click", (event) => {
+
 					event.preventDefault()
 					const body = {
 						name: window.localStorage.getItem("name"),
 						text: document.querySelector("textarea").value
 					}
 					console.log('click', event)
-						fetch("/base", {
-							method: "post",
+						fetch("/latest", {
+							method: "get",
 							headers: {
 								"content-type": "application/json"
 							},
-							body: JSON.stringify(body)
-						}).then((res) => {
-							console.log(res)
-							document.body.querySelector('textarea').value = ''
-						})
+						}).then(data => data.json())
+							.then((res) => {
+								console.log(res.posts)
+								  res.posts.forEach((post) => {
+									let node = document.createElement('div')
+									node.setAttribute('class', 'flashcard')
+									let nametag = document.createElement("h3")
+									nametag.textContent = post.name
+									node.appendChild(nametag)
+									let txtbody = document.createElement('p')
+									txtbody.textContent = post.text
+									node.appendChild(txtbody)
+									let dt = document.createElement('time')
+									function dtupdate () {
+										Array.from(document.querySelectorAll('time')).forEach((element) => {
+											console.log(element)
+											dt.textContent = Math.round((Date.now() - new Date(post.created_at) )/1000)
+										})
+									}
+									let interval = setInterval(dtupdate, 1000)
+									node.appendChild(dt)
+									document.body.querySelector('#post-aggregation').append(node)
+								})
+							})
 					})
-			})
+					document.addEventListener('DOMContentLoaded', (event) => {
+						document.addEventListener("submit", (e) => {
+							e.preventDefault()
+						})
+						document.body.querySelector("textarea").addEventListener("input", (event) => {
+							if (document.body.querySelector("textarea").value.length > 0) {
+								document.body.querySelector("input[type='submit']").removeAttribute('disabled')
+							}	
+							else {
+								document.body.querySelector("input[type='submit']").setAttribute('disabled', true)
+							}
+						})
+						document.body.querySelector("input[type='submit']").addEventListener('click', (e) => {
+							const bod = {
+								name: window.localStorage.getItem("name"),
+								text: document.body.querySelector("textarea").value
+							}
+							fetch('/base', {
+								method: "post",
+								headers: {
+									"content-type": "application/json"
+								},
+								body: JSON.stringify(bod)
+							})
+						})	
+					})
+
+					document.body.querySelector('section').innerHTML = ''
+					document.addEventListener("DOMContentLoaded" , (event) => {
+						let children = document.body.querySelectorAll(".flashcard")
+						document.body.querySelector('section').append(children[i])
+					})
 		
 	</script>
 </head>
@@ -97,9 +181,12 @@
 			<form action="/base" method="post">
 			<textarea name="textarea" placeholder="post!"></textarea>
 			<br />
-			<input type="submit" value="post" />
+			<input type="submit" value="post" disabled />
 			</form>
 	</table>
+	<section id="post-aggregation">
+		
+	</section>
 	
 </body>
 </html>
