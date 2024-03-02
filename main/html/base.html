@@ -90,16 +90,25 @@
 						user_slide_name.textContent = user.name
 						user_slide.appendChild(user_slide_name)
 						document.body.appendChild(user_slide)
-					})
 				})
+			})
 		})
 			document.addEventListener('DOMContentLoaded', (event) => {
+				window.socket = new WebSocket('/latest')
+				window.socket.addEventListener('open', (event) => {
+					console.log('socket open', event)
+				})
+				window.socket.addEventListener('message', (event) => {
+					console.log('message inbound', event)
+				})
+				window.socket.addEventListener('close', (event) => {
+					console.log('socket closed!', event)
+				})
 				let name = '('+window.localStorage.getItem("name")+' logged in)'
 				let code = document.createElement("code")
 				code.textContent = name
 				document.body.querySelector("nav").appendChild(code)
 
-				document.body.querySelector("input[type='submit']").addEventListener("click", (event) => {
 					event.preventDefault()
 					const body = {
 						name: window.localStorage.getItem("name"),
@@ -113,7 +122,8 @@
 							},
 						}).then(data => data.json())
 							.then((res) => {
-								Array.from(res.posts).forEach((post) => {
+								console.log(res.posts)
+								  res.posts.forEach((post) => {
 									let node = document.createElement('div')
 									node.setAttribute('class', 'flashcard')
 									let nametag = document.createElement("h3")
@@ -129,7 +139,24 @@
 								})
 							})
 					})
-				})
+					document.addEventListener('DOMContentLoaded', (event) => {
+						document.addEventListener("submit", (e) => {
+							e.preventDefault()
+						})
+						document.body.querySelector("input[type='submit']").addEventListener('click', (e) => {
+							const bod = {
+								name: window.localStorage.getItem("name"),
+								text: document.body.querySelector("textarea").value
+							}
+							fetch('/base', {
+								method: "post",
+								headers: {
+									"content-type": "application/json"
+								},
+								body: JSON.stringify(bod)
+							})
+						})	
+					})
 		
 	</script>
 </head>

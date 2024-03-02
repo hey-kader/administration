@@ -7,7 +7,10 @@ const base     = fs.readFileSync("html/base.html")
 
 const db = require ("./db/db.js")
 
-const App = require("./bin/uws_darwin_arm64_115").SSLApp
+const uws = require ("./bin/uws_darwin_arm64_115")
+const App =  uws.SSLApp
+
+let live_connections = new Set()
 
 const app = App ({
 	cert_file_name: "./.ssl/localhost.pem",
@@ -61,13 +64,16 @@ app.post('/base', (res, req) => {
 		buffer.push(Buffer.from(chunk).toString())	
 		console.log(buffer)
 		if (last) {
-			 const j = JSON.parse(buffer.join(''))
-			 db.newPost(j.name, j.text)
-			 res.end(JSON.stringify(j))
+			 buffer = buffer.join('')
+			 console.log(buffer)
+			 const parse = JSON.parse(buffer)
+			 db.newPost(parse.name, parse.text)
+			 //res.end(JSON.stringify(buffer))
+			 // share this post in real time w online accounts
 		}
 	})
-	res.onAborted (() => {
-		console.log('signal abort')
+  res.onAborted(() => {
+		console.log ("post /base aborted.")
 	})
 })
 
@@ -175,6 +181,26 @@ app.post('/login', (res, req) => {
 	res.writeStatus('302 Found')
 	res.writeHeader('Location', '/')
 	res.end()
+})
+
+app.ws('/latest', {
+	comression: uws.SHARED_COMPRESSOR,
+	maxPayloadLength: 16*1024,
+	idleTimeout: 10,
+	open: (ws) => {
+		console.log('open syncronization socket!')
+		live_connections.add(ws)
+	},
+	message: (ws, msg, isBinary) => {
+		console.log('message received!', msg)
+		live_connections.forEach((socket) => {
+			socket.send(msg, isBinary)
+		})
+	},
+	close: (ws) => {
+		console.log('socket closed')
+		live_connections.delete(ws)
+	}
 })
 
 app.get('/', (res, req) => {
