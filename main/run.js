@@ -6,7 +6,6 @@ const home     = fs.readFileSync("html/index.html")
 const base     = fs.readFileSync("html/base.html")
 
 const db = require ("./db/db.js")
-//console.log(db)
 
 const App = require("./bin/uws_darwin_arm64_115").SSLApp
 
@@ -17,7 +16,7 @@ const app = App ({
 
 app.any('/*', (res, req) => {
 	res.writeHeader('content-type', 'text/html')
-	res.end('<h1>hi</h1>')
+	res.end('<h1>hey! out of bounds, bones.</h1>')
 })
 
 app.get('/register', (res, req) => {
@@ -26,13 +25,14 @@ app.get('/register', (res, req) => {
 })
 
 app.get('/latest', (res, req) => {
-	db.allPosts()	
-		.then((data) => {
-			console.log('latest',data)
-			res.end(JSON.stringify({data: data}))
+	const posts = db.allPosts()	
+		.then((p) => {
+			console.log("POSTS")
+			res.writeHeader('content-type', 'application/json')
+			res.end(JSON.stringify({posts: p.rows}))
 		})
-		res.onAborted (() => {
-			console.log('aborted /latest get')
+		res.onAborted(() => {
+			console.log("get / latest abort")
 		})
 })
 
@@ -63,9 +63,12 @@ app.post('/base', (res, req) => {
 		if (last) {
 			 const j = JSON.parse(buffer.join(''))
 			 db.newPost(j.name, j.text)
+			 res.end(JSON.stringify(j))
 		}
 	})
-	res.end()
+	res.onAborted (() => {
+		console.log('signal abort')
+	})
 })
 
 
