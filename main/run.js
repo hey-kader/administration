@@ -25,6 +25,17 @@ app.get('/register', (res, req) => {
 	res.end(register)
 })
 
+app.get('/latest', (res, req) => {
+	db.allPosts()	
+		.then((data) => {
+			console.log('latest',data)
+			res.end(JSON.stringify({data: data}))
+		})
+		res.onAborted (() => {
+			console.log('aborted /latest get')
+		})
+})
+
 app.get('/auth/*', (res, req) => {
 	let name = req.getUrl().split('/')[2]
 	console.log(name)
@@ -42,6 +53,21 @@ app.get('/base', (res, req) => {
 	res.writeHeader('content-type', 'text/html')
 	res.end(base)
 })
+
+app.post('/base', (res, req) => {
+	console.log("share")
+	let buffer = []
+	res.onData((chunk, last) => {
+		buffer.push(Buffer.from(chunk).toString())	
+		console.log(buffer)
+		if (last) {
+			 const j = JSON.parse(buffer.join(''))
+			 db.newPost(j.name, j.text)
+		}
+	})
+	res.end()
+})
+
 
 app.get('/base/stat', (res, req) => {
 	res.writeHeader("content-type", "application/json")

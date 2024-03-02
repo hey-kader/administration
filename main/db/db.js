@@ -58,6 +58,23 @@ function newPost(name, text) {
 	}
 }
 
+async function fetch_all_posts () {
+	const sql = `SELECT * FROM posts;`
+	try {
+		pool.query(sql)
+			.then((res) => {
+				console.log(res)
+			})
+	}
+	catch (error) {
+		console.error('error here', error)
+	}
+}
+fetch_all_posts()
+	.then((res) => {
+		console.log(res)
+	})
+
 function newUser (name, email, digest) {
 	const sql = `INSERT INTO users(name, digest, email) VALUES($1, $2, $3) RETURNING *`
 	const values = [name, digest, email]
@@ -140,5 +157,6 @@ module.exports = {
 	checkName: checkName,
 	checkEmail: checkEmail,
 	getDigest: getDigest,
-	newPost: newPost
+	newPost: newPost,
+	allPosts: fetch_all_posts
 }
