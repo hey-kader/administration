@@ -83,14 +83,6 @@
 			}).then(res => res.json())
 				.then((data)=> {
 					console.log(data.users)
-					Array.from(data.users).forEach((user)=> {
-						let user_slide = document.createElement('div')
-						user_slide.setAttribute('class', 'flashcard')
-						let user_slide_name = document.createElement('h2')
-						user_slide_name.textContent = user.name
-						user_slide.appendChild(user_slide_name)
-						document.body.appendChild(user_slide)
-				})
 			})
 		})
 			document.addEventListener('DOMContentLoaded', (event) => {
