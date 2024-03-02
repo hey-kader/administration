@@ -135,6 +135,14 @@
 						document.addEventListener("submit", (e) => {
 							e.preventDefault()
 						})
+						document.body.querySelector("textarea").addEventListener("input", (event) => {
+							if (document.body.querySelector("textarea").value.length > 0) {
+								document.body.querySelector("input[type='submit']").removeAttribute('disabled')
+							}	
+							else {
+								document.body.querySelector("input[type='submit']").setAttribute('disabled', true)
+							}
+						})
 						document.body.querySelector("input[type='submit']").addEventListener('click', (e) => {
 							const bod = {
 								name: window.localStorage.getItem("name"),
@@ -161,7 +169,7 @@
 			<form action="/base" method="post">
 			<textarea name="textarea" placeholder="post!"></textarea>
 			<br />
-			<input type="submit" value="post" />
+			<input type="submit" value="post" disabled />
 			</form>
 	</table>
 	<section id="post-aggregation">
