@@ -164,10 +164,10 @@
 						})	
 					})
 
+					document.body.querySelector('section').innerHTML = ''
 					document.addEventListener("DOMContentLoaded" , (event) => {
-						document.body.querySelector("section#post-aggregation").children.forEach((child) => {
-							document.body.querySelector('section').lastElementChild.append(child)
-						})
+						let children = document.body.querySelectorAll(".flashcard")
+						document.body.querySelector('section').append(children[i])
 					})
 		
 	</script>

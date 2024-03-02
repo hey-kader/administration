@@ -59,7 +59,7 @@ function newPost(name, text) {
 }
 
 async function fetch_all_posts () {
-	const sql = `SELECT name, text, created_at FROM posts;`
+	const sql = `SELECT name, text, created_at FROM posts ORDER BY created_at DESC;`
 	const res = await pool.query(sql)
 	console.log(res)
 	return res
