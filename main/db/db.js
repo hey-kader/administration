@@ -58,6 +58,20 @@ else {
 	console.log('posts table alter already applied to add optional color column')
 }
 
+if (!fs.existsSync('./db/2.posts.sql.log')) {
+	const query = `ALTER TABLE posts
+	ADD COLUMN post_id SERIAL PRIMARY KEY`
+	pool.query(query)
+		.then((e) => {
+			console.log('alter posts add id applied ...')
+			console.log(e)
+			fs.writeFileSync('./db/2.posts.sql.log', 'OK')
+		})
+}
+else {
+	console.log('second patch already applied, which adds a unique id each post')
+}
+
 
 function newPost(name, text, color) {
 	const sql = `INSERT INTO posts(name, text, color) VALUES($1, $2, $3);`
@@ -73,7 +87,7 @@ function newPost(name, text, color) {
 }
 
 async function fetch_all_posts () {
-	const sql = `SELECT name, text, color, created_at FROM posts ORDER BY created_at DESC;`
+	const sql = `SELECT name, text, color, post_id, created_at FROM posts ORDER BY created_at DESC;`
 	const res = await pool.query(sql)
 	console.log(res)
 	return res
@@ -149,12 +163,6 @@ async function getDigest (name) {
 		console.error("failed to get digest from name. e", error)
 	}
 }
-
-const users = fetch_all_users()
-	.then((response) => {
-		console.log(response)
-	})
-
 
 module.exports = {
   newUser: newUser,

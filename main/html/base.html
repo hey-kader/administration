@@ -66,19 +66,29 @@
 			opacity: 60%;
 			border-radius: 18px;
 			padding: .5em;
+			display: grid
+			margin: 0.5em 1em 0.5em 1em;
 			border: solid lightgray 0.25px;
 		}
 		time {
 			font-family: monospaced system-ui, bold;
 		}
 		input[type="color"] {
+			margin: 1em;
 			height: 64px;
 			width: 64px;
-			border-radius: 5px;
-			border: solid 1px lightgray;
+			border-radius: 0px;
 		}
 		input[type="color"]:active {
 			border-radius: 10px;
+		}
+		input[type="color"]::-webkit-color-swatch-wrapper {
+			padding: 10px;
+			margin: 0px;
+		}
+		input[type="color"]::-webkit-color-swatch {
+			margin: 0px;
+			padding: 10px;
 		}
 		
 	</style>
