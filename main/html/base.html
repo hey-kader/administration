@@ -68,11 +68,17 @@
 			padding: .5em;
 			border: solid lightgray 0.25px;
 		}
-		input[type="submit"]::hover, input[type="submit"]:active {
-			background: linear-gradient(to top, white, white, cyan);
-		}
 		time {
 			font-family: monospaced system-ui, bold;
+		}
+		input[type="color"] {
+			height: 64px;
+			width: 64px;
+			border-radius: 5px;
+			border: solid 1px lightgray;
+		}
+		input[type="color"]:active {
+			border-radius: 10px;
 		}
 		
 	</style>
@@ -187,7 +193,9 @@
 							text: document.body.querySelector("textarea").value,
 							color: document.body.querySelector("input[type='color']").value.toString()
 						}
+
 						document.body.querySelector("textarea").value = ''
+						document.body.querySelector("input[type='submit']").setAttribute("disabled", "true")
 						document.body.querySelector('textarea').focus()
 
 						// here we send a new message to the live_connections set
