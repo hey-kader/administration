@@ -87,16 +87,14 @@
 			let text = document.createElement('p')
 			text.textContent = post.text
 			div.appendChild(text)
+
+			if (post.color) {
+				name.style.color = post.color
+			}
+
 			let time = document.createElement('time')
 			time.innerHTML = '0' 
 			div.appendChild(time)
-
-			if (post.color) {
-				let color = document.createElement('h5')
-				color.textContent = post.color
-				color.style.color = post.color
-				div.appendChild(color)
-			}
 
 			let selection = document.body.querySelector("#post-aggregation").firstElementChild
 			document.body.querySelector("#post-aggregation").insertBefore(div, selection)
@@ -154,10 +152,7 @@
 								node.appendChild(txtbody)
 
 								if (post.color) {
-									let color = document.createElement('h5')
-									color.style.color = post.color
-									color.textContent = post.color
-									node.appendChild(color)
+									nametag.style.color = post.color
 								}
 
 								let dt = document.createElement('time')
