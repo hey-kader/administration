@@ -2,7 +2,6 @@ require ("dotenv").config()
 const pg = require ("pg")
 const fs = require ("node:fs")
 
-console.log(process.env)
 const pool = new pg.Pool({
 	username: process.env.pg_username,
 	password: process.env.pg_password,
@@ -44,11 +43,26 @@ else {
 	console.log('posts table has already been created')
 }
 
+// patch 1 to posts, allow a color field, type varchar(8)
+if (!fs.existsSync('./db/1.posts.sql.log')) {
+	const query = `ALTER TABLE posts
+	ADD COLUMN color VARCHAR(8);`
+	pool.query(query)
+		.then((e) => {
+			console.log('alteres posts table to add color ok...')
+			console.log(e)
+			fs.writeFileSync('./db/1.posts.sql.log', 'OK')
+		})
+}
+else {
+	console.log('posts table alter already applied to add optional color column')
+}
 
-function newPost(name, text) {
-	const sql = `INSERT INTO posts(name, text) VALUES($1, $2);`
+
+function newPost(name, text, color) {
+	const sql = `INSERT INTO posts(name, text, color) VALUES($1, $2, $3);`
 	try {
-		pool.query(sql, [name, text])
+		pool.query(sql, [name, text, color])
 			.then((res) => {
 				console.log('new post insertion ok', res)
 			})
@@ -59,7 +73,7 @@ function newPost(name, text) {
 }
 
 async function fetch_all_posts () {
-	const sql = `SELECT name, text, created_at FROM posts ORDER BY created_at DESC;`
+	const sql = `SELECT name, text, color, created_at FROM posts ORDER BY created_at DESC;`
 	const res = await pool.query(sql)
 	console.log(res)
 	return res

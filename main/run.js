@@ -62,14 +62,11 @@ app.post('/base', (res, req) => {
 	let buffer = []
 	res.onData((chunk, last) => {
 		buffer.push(Buffer.from(chunk).toString())	
-		console.log(buffer)
+		//console.log(buffer)
 		if (last) {
 			 buffer = buffer.join('')
-			 console.log(buffer)
 			 const parse = JSON.parse(buffer)
-			 db.newPost(parse.name, parse.text)
-			 //res.end(JSON.stringify(buffer))
-			 // share this post in real time w online accounts
+			 db.newPost(parse.name, parse.text, parse.color)
 		}
 	})
   res.onAborted(() => {
