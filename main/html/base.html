@@ -71,9 +71,29 @@
 		input[type="submit"]::hover, input[type="submit"]:active {
 			background: linear-gradient(to top, white, white, cyan);
 		}
+		time {
+			font-family: monospaced system-ui, bold;
+		}
 		
 	</style>
 	<script>
+		//post.name, post.text
+		function prepend_new_post (post) {
+			/* make post */
+			let div = document.createElement('div')
+			div.setAttribute('class', 'post')
+			let name = document.createElement('h2')
+			name.textContent = post.name
+			div.appendChild(name)
+			let text = document.createElement('p')
+			text.textContent = post.text
+			div.appendChild(text)
+			/* make post end */
+			/* post is variable 'div', 
+			/* with h2 and p children name and text */
+			let selection = document.body.querySelector("#post-aggregation").firstElementChild
+			document.body.querySelector("#post-aggregation").insertBefore(div, selection)
+		}
 		document.addEventListener('DOMContentLoaded', (event) => {
 			fetch('/base/stat', {
 				method: "get",
@@ -81,9 +101,6 @@
 					"content-type": "application/json"
 				}
 			}).then(res => res.json())
-				.then((data)=> {
-					console.log(data.users)
-			})
 		})
 			document.addEventListener('DOMContentLoaded', (event) => {
 				window.socket = new WebSocket('/latest')
@@ -91,7 +108,10 @@
 					console.log('socket open', event)
 				})
 				window.socket.addEventListener('message', (event) => {
-					console.log('message inbound', event)
+					console.log('inbound message receipt', event)
+					let post = JSON.parse(event.data)
+					console.log('new post',post)
+				  prepend_new_post(post)	
 				})
 				window.socket.addEventListener('close', (event) => {
 					console.log('socket closed!', event)
@@ -106,7 +126,6 @@
 						name: window.localStorage.getItem("name"),
 						text: document.querySelector("textarea").value
 					}
-					console.log('click', event)
 						fetch("/latest", {
 							method: "get",
 							headers: {
@@ -127,8 +146,8 @@
 									let dt = document.createElement('time')
 									function dtupdate () {
 										Array.from(document.querySelectorAll('time')).forEach((element) => {
-											console.log(element)
 											dt.textContent = Math.round((Date.now() - new Date(post.created_at) )/1000)
+											dt.textContent = dt.textContent
 										})
 									}
 									let interval = setInterval(dtupdate, 1000)
@@ -154,6 +173,8 @@
 								name: window.localStorage.getItem("name"),
 								text: document.body.querySelector("textarea").value
 							}
+							// here we send a new message to the live_connections set
+							window.socket.send(JSON.stringify(bod))
 							fetch('/base', {
 								method: "post",
 								headers: {
@@ -161,14 +182,9 @@
 								},
 								body: JSON.stringify(bod)
 							})
-						})	
+						})
 					})
 
-					document.body.querySelector('section').innerHTML = ''
-					document.addEventListener("DOMContentLoaded" , (event) => {
-						let children = document.body.querySelectorAll(".flashcard")
-						document.body.querySelector('section').append(children[i])
-					})
 		
 	</script>
 </head>
@@ -179,9 +195,9 @@
 	<br />
 	<table>
 			<form action="/base" method="post">
-			<textarea name="textarea" placeholder="post!"></textarea>
-			<br />
-			<input type="submit" value="post" disabled />
+				<textarea name="textarea" placeholder="post!"></textarea>
+				<br />
+				<input type="submit" value="post" disabled />
 			</form>
 	</table>
 	<section id="post-aggregation">

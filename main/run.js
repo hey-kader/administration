@@ -200,6 +200,9 @@ app.ws('/latest', {
 	close: (ws) => {
 		console.log('socket closed')
 		live_connections.delete(ws)
+		live_connections.forEach((connection) => {
+			console.log(connection)
+		})
 	}
 })
 
