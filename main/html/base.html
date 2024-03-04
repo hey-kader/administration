@@ -183,6 +183,37 @@
 				})
 			})
 		}
+		async function users_db_batch_names (user_ids) {
+			let db;
+			let store;
+			let request = window.indexedDB.open("users")
+			request.addEventListener("success", (event) => {
+				db = event.target.result
+				const tx = db.transaction("all", "readonly")
+				store = tx.objectStore("all")
+				const records = user_ids.map((id) => {
+					new Promise((resolve) => {
+						const tx_req = store.get(id)
+						tx_req.addEventListener("success", () => {
+							resolve([id, request.result])
+						})
+						tx_req.addEventListener("error", () => {
+							resolve([id, null])
+						})
+					})
+				})
+			})
+					console.log(records)
+					const results = await Promise.all(records)
+					const records_obj = results.reduce((acc, [id, record]) => {
+						acc[id] = record
+						return acc
+					}, {})
+					return records_obj
+			request.addEVentListener("error", (error) => {
+				console.error("idb error in users_db_batch_names", error)
+			})
+		}
 		function like_btn_click (event) {
 			console.log(event, event.target)
 			event.target.setAttribute("disabled", "true")
@@ -338,13 +369,21 @@
 									let liked_by = document.createElement('ul')
 									liked_by.setAttribute('class', 'userlist')
 									post.user_ids_liked.forEach((id) => {
+										//there	
+										const dbreq = users_db_get_user(id)
+										dbreq.then((record) => {
+											console.log('RECORD',record.name)
+											let li = document.createElement("li")
+											li.innerHTML = record.name
+											li.setAttribute('data-userid', id)
+											liked_by.appendChild(li)
+										})
+									})
+									post.user_ids_liked.forEach((id) => {
 										if (id === +window.localStorage.getItem("id")) {
 											console.log('ok to disable like button here')
 											node.querySelector('#like_btn').setAttribute('disabled', 'true')
 										}
-										let user_id_tag = document.createElement('li')
-										user_id_tag.innerHTML = id
-										liked_by.appendChild(user_id_tag)
 									})
 									node.append(liked_by)
 								}
