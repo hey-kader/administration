@@ -72,6 +72,47 @@ else {
 	console.log('second patch already applied, which adds a unique id each post')
 }
 
+if (!fs.existsSync('./db/3.posts.sql.log')) {
+	const query = `ALTER TABLE posts
+	ADD COLUMN user_ids_liked INTEGER[];`
+	pool.query(query)
+		.then((e) => {
+			console.log('table alter ran ok')
+			fs.writeFileSync('./db/3.posts.sql.log', 'OK')
+		})
+}
+else {
+	console.log('third patch already applied, which adds an integer array column for liked by ids')
+}
+
+if (!fs.existsSync('./db/4.posts.sql.log')) {
+	const sql = `ALTER TABLE posts
+	ALTER COLUMN user_ids_liked SET DEFAULT '{}'::INTEGER[];`
+	pool.query(sql)
+		.then((e) => {
+			console.log('patch 4 ran ok')
+			console.log(e)
+			fs.writeFileSync('./db/4.posts.sql.log', 'OK')
+		})
+}
+else {
+	console.log("patch 4 already applied ok ...")
+	console.log("  this one alters table posts to have user_ids_liked default to []")
+}
+
+function likePost (user_id, post_id) {
+	const sql = `
+	UPDATE posts
+	SET user_ids_liked = array_append(user_ids_liked, $1)
+	WHERE post_id = $2
+	AND NOT ($1= ANY(user_ids_liked))
+	`
+	pool.query(sql, [user_id, post_id])
+		.then((e) => {
+			console.log('post like ok')
+			console.log (e)
+		})
+}
 
 function newPost(name, text, color) {
 	const sql = `INSERT INTO posts(name, text, color) VALUES($1, $2, $3);`
@@ -87,7 +128,7 @@ function newPost(name, text, color) {
 }
 
 async function fetch_all_posts () {
-	const sql = `SELECT name, text, color, post_id, created_at FROM posts ORDER BY created_at DESC;`
+	const sql = `SELECT name, text, color, post_id, user_ids_liked, created_at FROM posts ORDER BY created_at DESC;`
 	const res = await pool.query(sql)
 	console.log(res)
 	return res
@@ -117,6 +158,18 @@ async function fetch_all_users () {
 	}
 	catch (error) {
 		console.log('fetch all users error, e2', error)
+	}
+}
+
+async function get_userid (name) {
+	sql = `SELECT id FROM users WHERE name = $1`
+	try {
+		const result = await pool.query(sql, [name])
+		console.log(result)
+		return result.rows[0]
+	}
+	catch (error) {
+		console.error ('could not run query, get_userid for name', name, error)
 	}
 }
 
@@ -171,5 +224,7 @@ module.exports = {
 	checkEmail: checkEmail,
 	getDigest: getDigest,
 	newPost: newPost,
-	allPosts: fetch_all_posts
+	allPosts: fetch_all_posts,
+	likePost: likePost,
+	getUserID: get_userid
 }

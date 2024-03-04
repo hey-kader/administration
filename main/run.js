@@ -39,6 +39,7 @@ app.get('/latest', (res, req) => {
 		})
 })
 
+
 app.get('/auth/*', (res, req) => {
 	let name = req.getUrl().split('/')[2]
 	console.log(name)
@@ -189,7 +190,12 @@ app.ws('/latest', {
 		live_connections.add(ws)
 	},
 	message: (ws, msg, isBinary) => {
-		console.log('message received!', msg)
+		let m = JSON.parse(Buffer.from(msg).toString())
+		console.log(m)
+		if (m.action === "like") {
+			console.log('post like')
+			db.likePost(m.user_id, m.post_id)
+		}
 		live_connections.forEach((socket) => {
 			socket.send(msg, isBinary)
 		})
