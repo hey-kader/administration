@@ -207,8 +207,12 @@ app.ws('/latest', {
 				.then((r) => {
 					console.log('here',r.rows[0].post_id)
 					m.post_id = r.rows[0].post_id
-					live_connections.forEach((socket) => {
-						socket.send(JSON.stringify(m))
+					//
+					//develop
+					ws.cork(() => {
+						live_connections.forEach((socket) => {
+							socket.send(JSON.stringify(m))
+						})
 					})
 				})
 		}
