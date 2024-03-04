@@ -66,8 +66,9 @@ app.post('/base', (res, req) => {
 		//console.log(buffer)
 		if (last) {
 			 buffer = buffer.join('')
-			 const parse = JSON.parse(buffer)
-			 db.newPost(parse.name, parse.text, parse.color)
+			 console.log(buffer)
+			 //const parse = JSON.parse(buffer)
+			 //db.newPost(parse.name, parse.text, parse.color)
 		}
 	})
   res.onAborted(() => {
@@ -194,11 +195,28 @@ app.ws('/latest', {
 		console.log(m)
 		if (m.action === "like") {
 			console.log('post like')
-			db.likePost(m.user_id, m.post_id)
+			let res = db.likePost(m.user_id, m.post_id)
+			console.log('res', res)
+			live_connections.forEach((socket) => {
+				socket.send(JSON.stringify(m))
+			})
 		}
-		live_connections.forEach((socket) => {
-			socket.send(msg, isBinary)
-		})
+		else if (m.action === "post") {
+			console.log('make post here', m)
+			let res = db.newPost(m.name, m.text, m.color)
+				.then((r) => {
+					console.log('here',r.rows[0].post_id)
+					m.post_id = r.rows[0].post_id
+					live_connections.forEach((socket) => {
+						socket.send(JSON.stringify(m))
+					})
+				})
+		}
+		else {
+			live_connections.forEach((socket) => {
+				socket.send(msg, isBinary)
+			})
+		}
 	},
 	close: (ws) => {
 		console.log('socket closed')

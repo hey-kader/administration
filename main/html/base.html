@@ -123,6 +123,20 @@
 			time.innerHTML = '0' 
 			div.appendChild(time)
 
+			let post_id = document.createElement('h5')
+			post_id.setAttribute('x-postid', post.post_id)
+			post_id.textContent = post.post_id
+			div.appendChild(post_id)
+
+			let likes = document.createElement('p')
+			likes.setAttribute('id', 'likes')
+			likes.textContent = '0'
+			div.appendChild(likes)
+
+			let likedby = document.createElement('ul')
+			likedby.setAttribute('class', 'userlist')
+			div.appendChild(likedby)
+
 			let like_btn = document.createElement('input')
 			like_btn.setAttribute("type", "button")
 			like_btn.setAttribute("value", "like")
@@ -168,7 +182,10 @@
 				else if (post.action === "like") {
 					console.log('like!', post)
 					let relevant_post = document.body.querySelector("[x-postid='"+post.post_id+"']")
-					console.log(relevant_post.parentElement.querySelector("#likes"))
+					relevant_post.parentElement.querySelector("#likes").textContent = parseInt(relevant_post.parentElement.querySelector("#likes").textContent) + 1
+					let li = document.createElement('li')
+					li.innerHTML = post.user_id
+					relevant_post.parentElement.querySelector(".userlist").appendChild(li)
 				}
 			})
 			window.socket.addEventListener('close', () => {

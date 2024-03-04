@@ -114,13 +114,11 @@ function likePost (user_id, post_id) {
 		})
 }
 
-function newPost(name, text, color) {
-	const sql = `INSERT INTO posts(name, text, color) VALUES($1, $2, $3);`
+async function newPost(name, text, color) {
+	const sql = `INSERT INTO posts(name, text, color) VALUES($1, $2, $3) RETURNING post_id;`
 	try {
-		pool.query(sql, [name, text, color])
-			.then((res) => {
-				console.log('new post insertion ok', res)
-			})
+		const res = await pool.query(sql, [name, text, color])
+		return res
 	}
 	catch (error) {
 		console.error('caught error making a new post, e: ', error)
