@@ -162,7 +162,14 @@
 			window.socket.addEventListener('message', (event) => {
 				let post = JSON.parse(event.data)
 				console.log('new ',post)
-				prepend_new_post(post)	
+				if (post.action === "post") {
+					prepend_new_post(post)
+				}
+				else if (post.action === "like") {
+					console.log('like!', post)
+					let relevant_post = document.body.querySelector("[x-postid='"+post.post_id+"']")
+					console.log(relevant_post.parentElement.querySelector("#likes"))
+				}
 			})
 			window.socket.addEventListener('close', () => {
 				console.log('socket closed!')
@@ -203,11 +210,33 @@
 								let like_btn = document.createElement('input')
 								like_btn.setAttribute('type', 'button')
 								like_btn.setAttribute('value', 'like')
+								like_btn.setAttribute('id', 'like_btn')
 								like_btn.addEventListener('click', like_btn_click)
 								node.appendChild(like_btn)
 
 								let post_id = document.createElement('h5')
 								post_id.textContent = post.post_id
+								post_id.setAttribute("x-postid", post.post_id)
+								
+								if (post.user_ids_liked) {
+									let post_likes = document.createElement('p')
+									post_likes.setAttribute('id', 'likes')
+									post_likes.textContent = post.user_ids_liked.length
+									node.appendChild(post_likes)
+									let liked_by = document.createElement('ul')
+									liked_by.setAttribute('class', 'userlist')
+									post.user_ids_liked.forEach((id) => {
+										if (id === +window.localStorage.getItem("id")) {
+											console.log('ok to disable like button here')
+											node.querySelector('#like_btn').setAttribute('disabled', 'true')
+										}
+										let user_id_tag = document.createElement('li')
+										user_id_tag.innerHTML = id
+										liked_by.appendChild(user_id_tag)
+									})
+									node.append(liked_by)
+								}
+
 								node.appendChild(post_id)
 
 								let dt = document.createElement('time')
@@ -238,6 +267,7 @@
 					})
 					document.body.querySelector("input[type='submit']").addEventListener('click', (e) => {
 						const bod = {
+							action: "post",
 							name: document.body.querySelector("code").textContent.split(' ')[0],
 							text: document.body.querySelector("textarea").value,
 							color: document.body.querySelector("input[type='color']").value.toString()
