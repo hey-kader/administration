@@ -90,9 +90,99 @@
 			margin: 0px;
 			padding: 10px;
 		}
+		ul {
+			list-style-type: none;
+			font-family: arial;
+		}
 		
 	</style>
 	<script>
+		function users_db (user_array) {
+			let db;
+			let store;
+			let db_request = window.indexedDB.open('users', 3)
+			db_request.addEventListener('success', (event) => {
+				console.log("db request success", event)
+				db = event.target.result
+				const tx = db.transaction("all", "readwrite")
+				store = tx.objectStore("all")
+				user_array.forEach((user) => {
+					store.add(user)
+				})
+			})
+			db_request.addEventListener("upgradeneeded", (event) => {
+				console.log("db upgrade needed", event)
+				db = event.target.result
+				if (!db.objectStoreNames.contains("all")) {
+					store = db.createObjectStore("all", {keyPath: "id"})
+				}
+				store.transaction.addEventListener("complete", (ev) => {
+					const tx = db.transaction("all", "readwrite")
+					store = tx.objectStore("all")
+					user_array.forEach((user) => {
+						store.add(user)
+					})
+				})
+			})
+			db_request.addEventListener("error", (error) => {
+				console.log("db request open error", error)
+			})
+		}
+		function users_db_insert_user (user) {
+			let db;
+			let store;
+			let db_request = window.indexedDB.open("users")
+			db_request.addEventListener("success", (event) => {
+				db = event.target.result
+				const tx = db.transaction("all", "readwrite")
+				store = tx.objectStore("all")
+				const addUserRequest = store.add(user)
+				addUserRequest.addEventListener("success", () => {
+					console.log("user added to idb users[all] ok")
+				})
+				addUserRequest.addEventListener("error", (error) => {
+					console.error("add user to users.all error,", error)
+				})
+				tx.addEventListener("complete", () => {
+					db.close()
+				})
+			})
+			db_request.addEventListener("upgradeneeded", (event) => {
+				db = event.target.result
+			})
+			db_request.addEventListener("error", (error) => {
+				console.log("user insert idb error!", error)
+			})
+		}
+		async function users_db_get_user (user_id) {
+			return new Promise ((resolve, reject) => {
+				let db;
+				let store;
+				let db_request = window.indexedDB.open("users")
+				db_request.addEventListener("success", (event) => {
+					db = event.target.result
+					const tx = db.transaction("all", "readonly")
+					store = tx.objectStore("all")
+					const get_request = store.get(user_id)
+					get_request.addEventListener("success", () => {
+						console.log('success get single user', get_request)
+						resolve(get_request.result)
+					})
+					get_request.addEventListener("error", (error) => {
+						console.error("idb get single user error", user_id, error)
+					})
+					tx.addEventListener("complete", () => {
+						console.log('completed.',get_request.result)
+						return get_request.result
+						db.close()
+					})
+				})
+				db_request.addEventListener("error", (error) => {
+					console.log("idb error to get user", error)
+					reject("idb open error on get one")
+				})
+			})
+		}
 		function like_btn_click (event) {
 			console.log(event, event.target)
 			event.target.setAttribute("disabled", "true")
@@ -102,7 +192,6 @@
 				post_id: event.target.parentElement.querySelector("h5").textContent
 			}
 			window.socket.send(JSON.stringify(msg))
-			// post or send via ws your name or better yet user_id, and the post_id of event.target
 		}
 		function prepend_new_post (post) {
 			/* make post */
@@ -124,7 +213,8 @@
 			div.appendChild(time)
 
 			let post_id = document.createElement('h5')
-			post_id.setAttribute('x-postid', post.post_id)
+			post_id.setAttribute('class', 'post_id')
+			post_id.setAttribute('data-postid', post.post_id)
 			post_id.textContent = post.post_id
 			div.appendChild(post_id)
 
@@ -156,6 +246,7 @@
 			}).then(res => res.json())
 			.then((data) => {
 				console.log('base stat', data.users)
+				users_db(data.users)
 				if (!window.localStorage.getItem("id")) {
 						let localname = window.localStorage.getItem("name")
 						data.users.forEach((user) => {
@@ -175,16 +266,20 @@
 			})
 			window.socket.addEventListener('message', (event) => {
 				let post = JSON.parse(event.data)
-				console.log('new ',post)
 				if (post.action === "post") {
 					prepend_new_post(post)
 				}
 				else if (post.action === "like") {
-					console.log('like!', post)
-					let relevant_post = document.body.querySelector("[x-postid='"+post.post_id+"']")
+					console.log('like', post)
+					let relevant_post = document.body.querySelector("[data-postid='"+post.post_id+"']")
 					relevant_post.parentElement.querySelector("#likes").textContent = parseInt(relevant_post.parentElement.querySelector("#likes").textContent) + 1
 					let li = document.createElement('li')
-					li.innerHTML = post.user_id
+					// here, check idb and turn a user_id to a name
+					let prom = users_db_get_user(+post.user_id)
+					prom.then((msg) => {
+						li.innerHTML = msg.name
+						li.setAttribute("data-userid", post.user_id)
+					})
 					relevant_post.parentElement.querySelector(".userlist").appendChild(li)
 				}
 			})
@@ -233,7 +328,7 @@
 
 								let post_id = document.createElement('h5')
 								post_id.textContent = post.post_id
-								post_id.setAttribute("x-postid", post.post_id)
+								post_id.setAttribute("data-postid", post.post_id)
 								
 								if (post.user_ids_liked) {
 									let post_likes = document.createElement('p')
