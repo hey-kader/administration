@@ -66,14 +66,73 @@
 			opacity: 60%;
 			border-radius: 18px;
 			padding: .5em;
+			display: grid
+			margin: 0.5em 1em 0.5em 1em;
 			border: solid lightgray 0.25px;
 		}
-		input[type="submit"]::hover, input[type="submit"]:active {
-			background: linear-gradient(to top, white, white, cyan);
+		time {
+			font-family: monospaced system-ui, bold;
+		}
+		input[type="color"] {
+			margin: 1em;
+			height: 64px;
+			width: 64px;
+			border-radius: 0px;
+		}
+		input[type="color"]:active {
+			border-radius: 10px;
+		}
+		input[type="color"]::-webkit-color-swatch-wrapper {
+			padding: 10px;
+			margin: 0px;
+		}
+		input[type="color"]::-webkit-color-swatch {
+			margin: 0px;
+			padding: 10px;
 		}
 		
 	</style>
 	<script>
+		function like_btn_click (event) {
+			console.log(event, event.target)
+			event.target.setAttribute("disabled", "true")
+			let msg = {
+				action: "like",
+				user_id: window.localStorage.getItem("id"),
+				post_id: event.target.parentElement.querySelector("h5").textContent
+			}
+			window.socket.send(JSON.stringify(msg))
+			// post or send via ws your name or better yet user_id, and the post_id of event.target
+		}
+		function prepend_new_post (post) {
+			/* make post */
+			let div = document.createElement('div')
+			div.setAttribute('class', 'flashcard')
+			let name = document.createElement('h2')
+			name.textContent = post.name
+			div.appendChild(name)
+			let text = document.createElement('p')
+			text.textContent = post.text
+			div.appendChild(text)
+
+			if (post.color) {
+				name.style.color = post.color
+			}
+
+			let time = document.createElement('time')
+			time.innerHTML = '0' 
+			div.appendChild(time)
+
+			let like_btn = document.createElement('input')
+			like_btn.setAttribute("type", "button")
+			like_btn.setAttribute("value", "like")
+			like_btn.addEventListener("click", like_btn_click)
+			div.appendChild(like_btn)
+
+			let selection = document.body.querySelector("#post-aggregation").firstElementChild
+			document.body.querySelector("#post-aggregation").insertBefore(div, selection)
+		}
+
 		document.addEventListener('DOMContentLoaded', (event) => {
 			fetch('/base/stat', {
 				method: "get",
@@ -81,95 +140,154 @@
 					"content-type": "application/json"
 				}
 			}).then(res => res.json())
-				.then((data)=> {
-					console.log(data.users)
+			.then((data) => {
+				console.log('base stat', data.users)
+				if (!window.localStorage.getItem("id")) {
+						let localname = window.localStorage.getItem("name")
+						data.users.forEach((user) => {
+							if (user.name === localname) {
+								console.log("found you!", user)
+								window.localStorage.setItem("id", user.id)
+							}
+						})
+					}
 			})
 		})
-			document.addEventListener('DOMContentLoaded', (event) => {
-				window.socket = new WebSocket('/latest')
-				window.socket.addEventListener('open', (event) => {
-					console.log('socket open', event)
-				})
-				window.socket.addEventListener('message', (event) => {
-					console.log('message inbound', event)
-				})
-				window.socket.addEventListener('close', (event) => {
-					console.log('socket closed!', event)
-				})
-				let name = '('+window.localStorage.getItem("name")+' logged in)'
-				let code = document.createElement("code")
-				code.textContent = name
-				document.body.querySelector("nav").appendChild(code)
 
-					event.preventDefault()
-					const body = {
-						name: window.localStorage.getItem("name"),
-						text: document.querySelector("textarea").value
-					}
-					console.log('click', event)
-						fetch("/latest", {
-							method: "get",
+		document.addEventListener('DOMContentLoaded', (event) => {
+			window.socket = new WebSocket('/latest')
+			window.socket.addEventListener('open', (event) => {
+				console.log('socket open', event)
+			})
+			window.socket.addEventListener('message', (event) => {
+				let post = JSON.parse(event.data)
+				console.log('new ',post)
+				if (post.action === "post") {
+					prepend_new_post(post)
+				}
+				else if (post.action === "like") {
+					console.log('like!', post)
+					let relevant_post = document.body.querySelector("[x-postid='"+post.post_id+"']")
+					console.log(relevant_post.parentElement.querySelector("#likes"))
+				}
+			})
+			window.socket.addEventListener('close', () => {
+				console.log('socket closed!')
+			})
+			let name = window.localStorage.getItem("name")+' logged in'
+			let code = document.createElement("code")
+			code.textContent = name
+			document.body.querySelector("nav").appendChild(code)
+
+				event.preventDefault()
+				const body = {
+					name: window.localStorage.getItem("name"),
+					text: document.querySelector("textarea").value,
+					color: document.querySelector("input[type='color']").value.toString()
+				}
+					fetch("/latest", {
+						method: "get",
+						headers: {
+							"content-type": "application/json"
+						},
+					}).then(data => data.json())
+						.then((res) => {
+							console.log(res.posts)
+								res.posts.forEach((post) => {
+								let node = document.createElement('div')
+								node.setAttribute('class', 'flashcard')
+								let nametag = document.createElement("h3")
+								nametag.textContent = post.name
+								node.appendChild(nametag)
+								let txtbody = document.createElement('p')
+								txtbody.textContent = post.text
+								node.appendChild(txtbody)
+
+								if (post.color) {
+									nametag.style.color = post.color
+								}
+
+								let like_btn = document.createElement('input')
+								like_btn.setAttribute('type', 'button')
+								like_btn.setAttribute('value', 'like')
+								like_btn.setAttribute('id', 'like_btn')
+								like_btn.addEventListener('click', like_btn_click)
+								node.appendChild(like_btn)
+
+								let post_id = document.createElement('h5')
+								post_id.textContent = post.post_id
+								post_id.setAttribute("x-postid", post.post_id)
+								
+								if (post.user_ids_liked) {
+									let post_likes = document.createElement('p')
+									post_likes.setAttribute('id', 'likes')
+									post_likes.textContent = post.user_ids_liked.length
+									node.appendChild(post_likes)
+									let liked_by = document.createElement('ul')
+									liked_by.setAttribute('class', 'userlist')
+									post.user_ids_liked.forEach((id) => {
+										if (id === +window.localStorage.getItem("id")) {
+											console.log('ok to disable like button here')
+											node.querySelector('#like_btn').setAttribute('disabled', 'true')
+										}
+										let user_id_tag = document.createElement('li')
+										user_id_tag.innerHTML = id
+										liked_by.appendChild(user_id_tag)
+									})
+									node.append(liked_by)
+								}
+
+								node.appendChild(post_id)
+
+								let dt = document.createElement('time')
+								function dtupdate () {
+									Array.from(document.querySelectorAll('time')).forEach((element) => {
+										dt.textContent = Math.round((Date.now() - new Date(post.created_at) )/1000)
+									})
+								}
+								let interval = setInterval(dtupdate, 1000)
+
+								node.appendChild(dt)
+								document.body.querySelector('#post-aggregation').append(node)
+							})
+						})
+				})
+
+				document.addEventListener('DOMContentLoaded', (event) => {
+					document.addEventListener("submit", (e) => {
+						e.preventDefault()
+					})
+					document.body.querySelector("textarea").addEventListener("input", (event) => {
+						if (document.body.querySelector("textarea").value.length > 0) {
+							document.body.querySelector("input[type='submit']").removeAttribute('disabled')
+						}
+						else {
+							document.body.querySelector("input[type='submit']").setAttribute('disabled', true)
+						}
+					})
+					document.body.querySelector("input[type='submit']").addEventListener('click', (e) => {
+						const bod = {
+							action: "post",
+							name: document.body.querySelector("code").textContent.split(' ')[0],
+							text: document.body.querySelector("textarea").value,
+							color: document.body.querySelector("input[type='color']").value.toString()
+						}
+
+						document.body.querySelector("textarea").value = ''
+						document.body.querySelector("input[type='submit']").setAttribute("disabled", "true")
+						document.body.querySelector('textarea').focus()
+
+						// here we send a new message to the live_connections set
+						window.socket.send(JSON.stringify(bod))
+						fetch('/base', {
+							method: "post",
 							headers: {
 								"content-type": "application/json"
 							},
-						}).then(data => data.json())
-							.then((res) => {
-								console.log(res.posts)
-								  res.posts.forEach((post) => {
-									let node = document.createElement('div')
-									node.setAttribute('class', 'flashcard')
-									let nametag = document.createElement("h3")
-									nametag.textContent = post.name
-									node.appendChild(nametag)
-									let txtbody = document.createElement('p')
-									txtbody.textContent = post.text
-									node.appendChild(txtbody)
-									let dt = document.createElement('time')
-									function dtupdate () {
-										Array.from(document.querySelectorAll('time')).forEach((element) => {
-											console.log(element)
-											dt.textContent = Math.round((Date.now() - new Date(post.created_at) )/1000)
-										})
-									}
-									let interval = setInterval(dtupdate, 1000)
-									node.appendChild(dt)
-									document.body.querySelector('#post-aggregation').append(node)
-								})
+							body: JSON.stringify(bod)
 							})
-					})
-					document.addEventListener('DOMContentLoaded', (event) => {
-						document.addEventListener("submit", (e) => {
-							e.preventDefault()
 						})
-						document.body.querySelector("textarea").addEventListener("input", (event) => {
-							if (document.body.querySelector("textarea").value.length > 0) {
-								document.body.querySelector("input[type='submit']").removeAttribute('disabled')
-							}	
-							else {
-								document.body.querySelector("input[type='submit']").setAttribute('disabled', true)
-							}
-						})
-						document.body.querySelector("input[type='submit']").addEventListener('click', (e) => {
-							const bod = {
-								name: window.localStorage.getItem("name"),
-								text: document.body.querySelector("textarea").value
-							}
-							fetch('/base', {
-								method: "post",
-								headers: {
-									"content-type": "application/json"
-								},
-								body: JSON.stringify(bod)
-							})
-						})	
-					})
-
-					document.body.querySelector('section').innerHTML = ''
-					document.addEventListener("DOMContentLoaded" , (event) => {
-						let children = document.body.querySelectorAll(".flashcard")
-						document.body.querySelector('section').append(children[i])
-					})
-		
+				})
 	</script>
 </head>
 <body>
@@ -179,14 +297,12 @@
 	<br />
 	<table>
 			<form action="/base" method="post">
-			<textarea name="textarea" placeholder="post!"></textarea>
-			<br />
-			<input type="submit" value="post" disabled />
+				<textarea name="textarea" placeholder="post!"></textarea>
+				<br />
+				<input name="color" type="color" />
+				<input type="submit" value="post" disabled />
 			</form>
 	</table>
-	<section id="post-aggregation">
-		
-	</section>
-	
+	<section id="post-aggregation"></section>
 </body>
 </html>

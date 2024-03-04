@@ -39,6 +39,7 @@ app.get('/latest', (res, req) => {
 		})
 })
 
+
 app.get('/auth/*', (res, req) => {
 	let name = req.getUrl().split('/')[2]
 	console.log(name)
@@ -62,14 +63,11 @@ app.post('/base', (res, req) => {
 	let buffer = []
 	res.onData((chunk, last) => {
 		buffer.push(Buffer.from(chunk).toString())	
-		console.log(buffer)
+		//console.log(buffer)
 		if (last) {
 			 buffer = buffer.join('')
-			 console.log(buffer)
 			 const parse = JSON.parse(buffer)
-			 db.newPost(parse.name, parse.text)
-			 //res.end(JSON.stringify(buffer))
-			 // share this post in real time w online accounts
+			 db.newPost(parse.name, parse.text, parse.color)
 		}
 	})
   res.onAborted(() => {
@@ -192,7 +190,12 @@ app.ws('/latest', {
 		live_connections.add(ws)
 	},
 	message: (ws, msg, isBinary) => {
-		console.log('message received!', msg)
+		let m = JSON.parse(Buffer.from(msg).toString())
+		console.log(m)
+		if (m.action === "like") {
+			console.log('post like')
+			db.likePost(m.user_id, m.post_id)
+		}
 		live_connections.forEach((socket) => {
 			socket.send(msg, isBinary)
 		})
@@ -200,6 +203,9 @@ app.ws('/latest', {
 	close: (ws) => {
 		console.log('socket closed')
 		live_connections.delete(ws)
+		live_connections.forEach((connection) => {
+			console.log(connection)
+		})
 	}
 })
 
