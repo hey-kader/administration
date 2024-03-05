@@ -221,6 +221,9 @@ app.ws('/latest', {
 		else if (m.action === "comment") {
 			console.log('comment',m)
 			db.newComment(m.user_id, m.post_id, m.comment)
+			live_connections.forEach((socket) => {
+				socket.send(JSON.stringify(m))
+			})
 		}
 		else {
 			live_connections.forEach((socket) => {
