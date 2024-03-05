@@ -251,7 +251,7 @@ app.get('/comments/*', (res, req) => {
 		console.log("cork")
 		db.getComments(route)
 			.then((r) => {
-				console.log(url, route, r.rows)
+				//console.log(url, route, r.rows)
 				if (r.rows.length > 0) {
 					res.end(JSON.stringify(r.rows))
 				}
@@ -259,9 +259,9 @@ app.get('/comments/*', (res, req) => {
 					res.end(JSON.stringify([]))
 				}
 			})
-	})
-	res.onAborted(() => {
-		console.log('aborted handler comments get')
+			res.onAborted(() => {
+				console.log('aborted handler comments get')
+			})
 	})
 })
 
