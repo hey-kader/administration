@@ -245,6 +245,7 @@ app.get('/comments/*', (res, req) => {
 	let route = parse[2]
 	console.log(route)
 	res.cork( () => {
+		res.writeHeader("content-type", "application/json")
 		console.log("cork")
 		db.getComments(route)
 			.then((r) => {
