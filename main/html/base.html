@@ -519,23 +519,21 @@
 				}
 			}).then(res => res.json())
 				.then((data) => {
-					console.log("posts for route",post_id, data)
+					//console.log("posts for route",post_id, data)
 					// there 2
 					if (data.length === 0) {
 						data = {post_id: []}
-						console.log(data)
+						//console.log(data)
 					}
 					else {
 						for (let d of data) {
-							console.log("insert row to comments idb here")
-							console.log(d, post_id)
 							const interactionDBRequest = window.indexedDB.open("comments")
 							interactionDBRequest.addEventListener("success", (r) => {
 								const db = r.target.result
 								let txn = db.transaction("comments", "readwrite")
 								let store = txn.objectStore("comments")
 								store.put({id: post_id, comments: data}).onsuccess = function () {
-									console.log('added comment to comments db comments object store ok')
+									//console.log('added comment to comments db comments object store ok')
 									db.close()
 								}
 							})
