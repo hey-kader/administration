@@ -392,7 +392,9 @@
 					}).then(data => data.json())
 						.then((res) => {
 							console.log(res.posts)
+								console.log(res.posts.length)
 								res.posts.forEach((post) => {
+								fetch_comments_by_postid(post.post_id)
 								let node = document.createElement('div')
 								node.setAttribute('class', 'flashcard')
 								let nametag = document.createElement("h3")
@@ -449,6 +451,10 @@
 									})
 									node.append(liked_by)
 								}
+								//labell
+								let comment_label = document.createElement("h6")
+								comment_label.textContent = "comments: 0"
+								node.appendChild(comment_label)
 								
 								node.appendChild(post_id)
 								node.appendChild(like_btn)
@@ -514,24 +520,29 @@
 			}).then(res => res.json())
 				.then((data) => {
 					console.log("posts for route",post_id, data)
-					for (let d of data) {
-						console.log("insert row to comments idb here")
-						console.log(d, post_id)
-						const interactionDBRequest = window.indexedDB.open("comments")
-						interactionDBRequest.addEventListener("success", (r) => {
-							console.log(r)
-							const db = r.target.result
-							let txn = db.transaction("comments", "readwrite")
-							console.log('txn',txn)
-							let store = txn.objectStore("comments")
-							console.info('store', store, post_id, data)
-							store.put({id: post_id, comments: data}).onsuccess = function () {
-								console.log('added comment to comments db comments object store ok')
-							}
-						})
-						interactionDBRequest.addEventListener("error", (error) => {
-							console.error ("interactionDBRequest to insert rows failed")
-						})
+					// there 2
+					if (data.length === 0) {
+						data = {post_id: []}
+						console.log(data)
+					}
+					else {
+						for (let d of data) {
+							console.log("insert row to comments idb here")
+							console.log(d, post_id)
+							const interactionDBRequest = window.indexedDB.open("comments")
+							interactionDBRequest.addEventListener("success", (r) => {
+								const db = r.target.result
+								let txn = db.transaction("comments", "readwrite")
+								let store = txn.objectStore("comments")
+								store.put({id: post_id, comments: data}).onsuccess = function () {
+									console.log('added comment to comments db comments object store ok')
+									db.close()
+								}
+							})
+							interactionDBRequest.addEventListener("error", (error) => {
+								console.error ("interactionDBRequest to insert rows failed")
+							})
+						}
 					}
 				})
 			}
@@ -563,9 +574,6 @@
 				})
 
 				console.info("load", event)
-				for (let i = 1; i < 370; i++) {
-					fetch_comments_by_postid(i)
-				}
 			})
 
 	</script>
