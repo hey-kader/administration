@@ -399,6 +399,26 @@
 							let comment = document.createElement("code")
 							comment.textContent = _p.name + ": " + post.comment
 							entry_node.append(comment)
+							// insert comment into comment.objectStore("comment") with id post.post_id
+							let db;
+							let store;
+							let tx;
+							let request = window.indexedDB.open("comments")
+							request.addEventListener("success", (e) => {
+								db = e.target.result
+								tx = db.transaction("comments")
+								store = tx.objectStore("comments")
+								const all = store.get(post.post_id)
+								tx.addEventListener("success", () => {
+									console.info(all.result)
+									const d =  all.result
+									d.push(post)
+									store.put(post.post_id, d)
+								})
+							})
+							request.addEventListener("error", (error) => {
+								console.error("error here, CO sub", error)
+							})
 							
 						})
 				}

@@ -220,10 +220,23 @@ app.ws('/latest', {
 		}
 		else if (m.action === "comment") {
 			console.log('comment',m)
-			db.newComment(m.user_id, m.post_id, m.comment)
-			live_connections.forEach((socket) => {
-				socket.send(JSON.stringify(m))
+			let newcomment = db.newComment(m.user_id, m.post_id, m.comment)
+			newcomment.then((r) => {
+				console.log('newcomment',newcomment.result, r.rows[0].created_at, r.rows[0].comment_id)
+				let pkg = {
+					action: "comment",
+					post_id: m.post_id,
+					user_id: m.user_id,
+					comment: m.comment,
+					created_at: r.rows[0].created_at,
+					comment_id: r.rows[0].comment_id
+				}
+				live_connections.forEach((socket) => {
+					socket.send(JSON.stringify(pkg))
+				})
 			})
+			//console.log('newcomment',newcomment)
+
 		}
 		else {
 			live_connections.forEach((socket) => {
@@ -251,7 +264,6 @@ app.get('/comments/*', (res, req) => {
 		let route = parse[2]
 		console.log(route, parse)
 		res.writeHeader("content-type", "application/json")
-		console.log("cork")
 		db.getComments(route)
 			.then((r) => {
 				//console.log(url, route, r.rows)
