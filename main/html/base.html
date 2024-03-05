@@ -132,6 +132,29 @@
 		#comment_label::before {
 			content: "comments: "
 		}
+		.comments code {
+			padding-left: 10px;
+			padding-right: 10px;
+			border-radius: 0px;
+			border-top: .5px solid lightgray;
+			border-bottom: .5px solid lightgray;
+			border-left: 1px solid gray;
+			border-right: 1px solid gray;
+			background: dodgerblue;
+			font-family: system-ui;
+			font-size: 80%;
+			color: white
+		}
+		.comments code:hover {
+			color: lightgray;
+			outline: skyblue 2px;
+		}
+		.comments code:first-child {
+			border-radius: 5px 5px 0px 0px;
+		}
+		.comments code:last-child {
+			border-radius: 0px 0px 5px 5px;
+		}
 		
 	</style>
 	<script>

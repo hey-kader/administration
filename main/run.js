@@ -13,7 +13,7 @@ const App =  uws.SSLApp
 let live_connections = new Set()
 
 const app = App ({
-	cert_file_name: "./.ssl/localhost.pem",
+	cert_file_name: "./.ssl/localhost.pem.pem",
 	key_file_name: "./.ssl/localhost.pem.key"
 })
 
