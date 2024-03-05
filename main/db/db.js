@@ -144,16 +144,19 @@ function drop_table(name) {
 		})
 }
 
-function newComment(user_id, post_id, comment) {
+async function newComment(user_id, post_id, comment) {
   const sql = `
 	INSERT INTO comments (user_id, post_id, comment)
 	VALUES ($1, $2, $3)
+	RETURNING comment_id, created_at;
 	`
-	pool.query(sql, [user_id, post_id, comment])
-		.then((e) => {
-			console.log('comment in db')
-			console.log('resolve', e)
-		})
+	try {
+		const result = await pool.query(sql, [user_id, post_id, comment])
+		return result
+	}
+	catch (error) {
+		console.log('no new commet err', error)
+	}
 }
 
 function likePost (user_id, post_id) {
