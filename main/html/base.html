@@ -118,10 +118,13 @@
 			margin-left: 10px;
 			margin-right: 10px;
 		}
-		div.comments {
+		.comments {
+			padding: 0.5em;
 			boder: none;
 		}
-		.comments code {
+		code {
+			border: none;
+			color: lightgray;
 		}
 		
 	</style>
@@ -262,14 +265,17 @@
 					post_id: post_id,
 					comment: comment
 				}
+				// also send body to comment table comment objectStore here!
 				console.log(body)
 				window.socket.send(JSON.stringify(body))
-				e.target.parentElement.remove()
+				e.target.parentElement.querySelector("input[type='search']").value = ''
+				//e.target.parentElement.remove()
 			})
 		}
 		function like_btn_click (event) {
 			console.log(event, event.target)
 			event.target.setAttribute("disabled", "true")
+			event.target.value = ""
 			let msg = {
 				action: "like",
 				user_id: window.localStorage.getItem("id"),
@@ -300,6 +306,7 @@
 			post_id.setAttribute('class', 'post_id')
 			post_id.setAttribute('data-postid', post.post_id)
 			post_id.textContent = post.post_id
+			post_id.style.display = "none"
 			div.appendChild(post_id)
 
 			let likes = document.createElement('p')
@@ -380,6 +387,21 @@
 					})
 					relevant_post.parentElement.querySelector(".userlist").appendChild(li)
 				}
+				else if (post.action === "comment") {
+					// CO
+					console.log('COMMENT', post)
+					let relevant_post = document.body.querySelector("[data-postid='"+post.post_id+"']")
+					const p2 = users_db_get_user(+post.user_id)
+						.then((_p) => {
+							console.log('_p',_p.name)
+
+							const entry_node = relevant_post.parentElement.querySelector("h6").children[0]
+							let comment = document.createElement("code")
+							comment.textContent = _p.name + ": " + post.comment
+							entry_node.append(comment)
+							
+						})
+				}
 			})
 			window.socket.addEventListener('close', () => {
 				console.log('socket closed!')
@@ -435,6 +457,7 @@
 
 								let post_id = document.createElement('h5')
 								post_id.textContent = post.post_id
+								post_id.style.display = "none"
 								post_id.setAttribute("data-postid", post.post_id)
 								node.appendChild(like_btn)
 								
@@ -464,7 +487,8 @@
 								}
 								//labell
 								let comment_label = document.createElement("h6")
-								comment_label.textContent = "comments: 0"
+								comment_label.setAttribute("id", "comment_label")
+								comment_label.textContent = "comments: "
 								// here, find the number of comments for post.post_id
 								let db;
 								let store;
@@ -492,8 +516,8 @@
 													})
 												comments_div.appendChild(author)
 											})	
+											console.log(store_req.result)
 										}
-										console.log(store_req.result)
 									})
 								})
 
@@ -585,6 +609,26 @@
 							})
 						}
 					}
+				})
+			}
+			function insertComments (post_id,arr) {
+				let store;
+				let db;
+				let tx;
+				let req = window.indexedDB.open("comments")
+				req.addEventListener("success", (e) => {
+					db = e.target.result
+					tx = db.transaaction("comments", "readwrite")
+					store = tx.objectStore("comments")
+					store.put({id: post_id, comments: arr}).onsuccess = function () {
+						db.close()
+					}
+					tx.addEventListener("success", () => {
+						console.log("tx success!!")
+					})
+				})
+				req.addEventListener("error", (e) => {
+					console.error("error idb ", e)
 				})
 			}
 
