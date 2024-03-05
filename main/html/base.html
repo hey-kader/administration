@@ -138,8 +138,8 @@
 			border-radius: 0px;
 			border-top: .5px solid lightgray;
 			border-bottom: .5px solid lightgray;
-			border-left: 1px solid gray;
-			border-right: 1px solid gray;
+			border-left: 1px solid lightgray;
+			border-right: 1px solid lightgray;
 			background: dodgerblue;
 			font-family: system-ui;
 			font-size: 80%;
@@ -160,6 +160,10 @@
 		}
 		time {
 			display: noone;
+		}
+		.comments row {
+			margin-top: 3px;
+			margin-bottom: 3px;
 		}
 		
 	</style>
@@ -357,6 +361,7 @@
 			let comments = document.createElement("div")
 			comments.setAttribute("class", "comments")
 			comments.setAttribute("data-postid", post.post_id)
+			comments.setAttribute("data-userid", post.user_id)
 			div.appendChild(comments)	
 
 			let like_btn = document.createElement('input')
@@ -451,7 +456,12 @@
 
 							const entry_node = relevant_post.parentElement.querySelector(".comments")
 							let comment = document.createElement("code")
-							comment.textContent = _p.name + ": " + post.comment
+							users_db_get_user(post.user_id)
+								.then((result) => {
+									console.log("result, ",result)
+								})
+
+							comment.textContent = users_db_get_user(post.user_id)+ ": " + post.comment
 							comment.setAttribute("data-timestamp", Date.parse(Date.now()-Date.parse(post.created_at)))
 							let ti = document.createElement("time")
 							const n = Date.now() - Date.parse(post.created_at)
@@ -493,7 +503,7 @@
 							
 
 							let c = document.createElement("code")
-							c.textContent = post.name + ': '+post.comment
+							c.textContent = post.user_id+': '+post.comment
 							c.setAttribute("class", "comment-row")
 							c.setAttribute("data-postid", post.post_id)
 							entry_node.append(c)
@@ -807,6 +817,7 @@
 				<textarea name="textarea" placeholder="post!"></textarea>
 				<br />
 				<input name="color" type="color" />
+				<input type="file" pseudo="file-selector-button">
 				<input type="submit" value="post" disabled />
 			</form>
 	</table>
