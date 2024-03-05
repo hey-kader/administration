@@ -271,7 +271,8 @@ app.get('/comments/*', (res, req) => {
 					res.end(JSON.stringify(r.rows))
 				}
 				else {
-					res.end(JSON.stringify([]))
+					console.log(parse[2])
+					res.end(JSON.stringify({id: parse[2], comments: []}))
 				}
 			})
 			res.onAborted(() => {

@@ -126,6 +126,12 @@
 			border: none;
 			color: lightgray;
 		}
+		#likes::after {
+			content: " likes";
+		}
+		#comment_label::before {
+			content: "comments: "
+		}
 		
 	</style>
 	<script>
@@ -373,6 +379,23 @@
 				let post = JSON.parse(event.data)
 				if (post.action === "post") {
 					prepend_new_post(post)
+					/* create a {id: post.post_id comments: []} record in the comments comments objectStore and database, respectively. :) */
+					let request = window.indexedDB.open("comments")
+					request.onerror = function (error) {
+						console.error("request e1 @ prepense idb insert err", error)
+					}
+					request.onsuccess = function (event) {
+						let db = event.target.result
+						let tx = db.transaction("comments", "readwrite")
+						let store = tx.objectStore("comments")
+						const put_req = store.put({id: post.post_id, comments: []})
+						put_req.onerror = (error) => {
+							console.error(error)
+						}
+						put_req.onsuccess = (event) => {
+							console.log('put result', put_req.result)
+						}
+					}
 				}
 				else if (post.action === "like") {
 					console.log('like', post)
@@ -380,6 +403,7 @@
 					relevant_post.parentElement.querySelector("#likes").textContent = parseInt(relevant_post.parentElement.querySelector("#likes").textContent) + 1
 					let li = document.createElement('li')
 					// here, check idb and turn a user_id to a name
+					/* create a {id: post.post_id comments: []} record in the comments comments objectStore and database, respectively. :) */
 					let prom = users_db_get_user(+post.user_id)
 					prom.then((msg) => {
 						li.innerHTML = msg.name
@@ -520,7 +544,6 @@
 								//labell
 								let comment_label = document.createElement("h6")
 								comment_label.setAttribute("id", "comment_label")
-								comment_label.textContent = "comments: "
 								// here, find the number of comments for post.post_id
 								let db;
 								let store;
@@ -534,21 +557,27 @@
 									store = tx.objectStore("comments")
 									const store_req = store.get(post.post_id)
 									store_req.addEventListener("success", () => {
-										if (store_req.result.comments) {
-											comment_label.textContent = "comments: " + store_req.result.comments.length
-											let comments_div = document.createElement("div")
-											comment_label.append(comments_div)
-											comments_div.setAttribute("class", "comments")
-											store_req.result.comments.forEach((comment) => {
-												console.warn(comment)
-												let author = document.createElement('code')
-												let prom = users_db_get_user(+comment.user_id) 
-													prom.then((a) => {
-														author.textContent = a.name+': '+comment.comment
-													})
-												comments_div.appendChild(author)
-											})	
-											console.log(store_req.result)
+										try {
+											if (store_req.result.comments) {
+												comment_label.textContent = store_req.result.comments.length
+												let comments_div = document.createElement("div")
+												comment_label.append(comments_div)
+												comments_div.setAttribute("class", "comments")
+												store_req.result.comments.forEach((comment) => {
+													console.warn(comment)
+													let author = document.createElement('code')
+													let prom = users_db_get_user(+comment.user_id) 
+														prom.then((a) => {
+															author.textContent = a.name+': '+comment.comment
+														})
+													comments_div.appendChild(author)
+												})	
+												console.log(store_req.result)
+											}
+										}
+										catch (e) {
+											console.error('comments store_req error e', e)
+											comment_label.textContent = 0
 										}
 									})
 								})
