@@ -112,6 +112,17 @@
 		button#sendButton {
 			margin-right: 5px;
 		}
+		.comments {
+			margin-top: 0;
+			margin-bottom: 0;
+			margin-left: 10px;
+			margin-right: 10px;
+		}
+		div.comments {
+			boder: none;
+		}
+		.comments code {
+		}
 		
 	</style>
 	<script>
@@ -454,6 +465,38 @@
 								//labell
 								let comment_label = document.createElement("h6")
 								comment_label.textContent = "comments: 0"
+								// here, find the number of comments for post.post_id
+								let db;
+								let store;
+								const request = window.indexedDB.open("comments")
+								request.addEventListener("error", (error) => {
+									console.error("could not open comments db")
+								})
+								request.addEventListener("success", (e) => {
+									db = e.target.result
+									const tx = db.transaction("comments", "readonly")
+									store = tx.objectStore("comments")
+									const store_req = store.get(post.post_id)
+									store_req.addEventListener("success", () => {
+										if (store_req.result.comments) {
+											comment_label.textContent = "comments: " + store_req.result.comments.length
+											let comments_div = document.createElement("div")
+											comment_label.append(comments_div)
+											comments_div.setAttribute("class", "comments")
+											store_req.result.comments.forEach((comment) => {
+												console.warn(comment)
+												let author = document.createElement('code')
+												let prom = users_db_get_user(+comment.user_id) 
+													prom.then((a) => {
+														author.textContent = a.name+': '+comment.comment
+													})
+												comments_div.appendChild(author)
+											})	
+										}
+										console.log(store_req.result)
+									})
+								})
+
 								node.appendChild(comment_label)
 								
 								node.appendChild(post_id)
@@ -550,7 +593,6 @@
 				let db;
 				let store;
 				interactionDB.addEventListener("success", (e) => {
-					
 					console.info("comments for interaction db open success", e)
 					db = e.target.result
 					let tx = db.transaction("comments", "readwrite")
