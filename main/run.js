@@ -78,13 +78,15 @@ app.post('/base', (res, req) => {
 
 
 app.get('/base/stat', (res, req) => {
-	res.writeHeader("content-type", "application/json")
-	db.allUsers()
-		.then((users) => {
-			res.end(JSON.stringify({users: users}))
+	res.cork(() => {
+		res.writeHeader("content-type", "application/json")
+		db.allUsers()
+			.then((users) => {
+				res.end(JSON.stringify({users: users}))
+			})
+		res.onAborted(() => {
+			console.log('abort')
 		})
-	res.onAborted(() => {
-		console.log('abort')
 	})
 })
 
@@ -240,11 +242,11 @@ app.get('/', (res, req) => {
 })
 
 app.get('/comments/*', (res, req) => {
-	let url = req.getUrl()
-	let parse = url.split('/')
-	let route = parse[2]
-	console.log(route)
 	res.cork( () => {
+		let url = req.getUrl()
+		let parse = url.split('/')
+		let route = parse[2]
+		console.log(route, parse)
 		res.writeHeader("content-type", "application/json")
 		console.log("cork")
 		db.getComments(route)
