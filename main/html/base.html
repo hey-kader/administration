@@ -155,6 +155,12 @@
 		.comments code:last-child {
 			border-radius: 0px 0px 5px 5px;
 		}
+		time:hover {
+			display: flex;
+		}
+		time {
+			display: noone;
+		}
 		
 	</style>
 	<script>
@@ -445,6 +451,15 @@
 							const entry_node = relevant_post.parentElement.querySelector("h6").children[0]
 							let comment = document.createElement("code")
 							comment.textContent = _p.name + ": " + post.comment
+							comment.setAttribute("data-timestamp", Date.parse(Date.now()-Date.parse(post.created_at)))
+							let ti = document.createElement("time")
+							const n = Date.now() - Date.parse(post.created_at)
+							ti.textContent = format_time(parseInt(n))
+							ti.style.color = "orange"
+							ti.style.float = "right"
+							ti.setAttribute("class", "post_timer")
+							
+							comment.appendChild(ti)
 							let request = window.indexedDB.open("comments")
 							request.onerror = function (err) {
 								console.error("idb open err1", err)
@@ -518,6 +533,10 @@
 								let txtbody = document.createElement('p')
 								txtbody.textContent = post.text
 								node.appendChild(txtbody)
+
+								let ts = document.createElement('time')
+								ts.setAttribute("data-timestamp", post.created_at)
+								ts.innerHTML = format_time(post.created_at)
 
 								if (post.color) {
 									nametag.style.color = post.color
@@ -595,10 +614,19 @@
 													let prom = users_db_get_user(+comment.user_id) 
 														prom.then((a) => {
 															author.textContent = a.name+': '+comment.comment
+															author.setAttribute("data-timestamp", comment.created_at)
+															author.setAttribute("class", "comment-row")
+															author.addEventListener("mouseleave", (event) => {
+																event.target.parentElement.querySelector("time").style.display = "none"
+															})
+															author.addEventListener("mouseenter", (event) => {
+																event.target.parentElement.querySelector("time").style.display = "table-row"
+															})
 														})
 													comments_div.appendChild(author)
 												})	
 												console.log(store_req.result)
+												
 											}
 										}
 										catch (e) {
@@ -617,7 +645,8 @@
 								let dt = document.createElement('time')
 								function dtupdate () {
 									Array.from(document.querySelectorAll('time')).forEach((element) => {
-										dt.textContent = Math.round((Date.now() - new Date(post.created_at) )/1000)
+										dt.textContent = Math.round((Date.now() - new Date(post.created_at) ))
+										dt.textContent = format_time (dt.textContent)
 									})
 								}
 								let interval = setInterval(dtupdate, 1000)
@@ -627,6 +656,18 @@
 							})
 						})
 				})
+				function format_time (time) {
+					let seconds = Math.floor(time/1000)
+					let minutes = Math.floor(seconds/60)
+					let hours = Math.floor(minutes/60)
+					let days = Math.floor(hours / 24) 
+
+					seconds = seconds % 60
+					minutes = minutes % 60
+					hours = hours % 24
+					const padWithZeroes = (number) => (number < 10 ? `0${number}` : number)
+					return `${days}d ${padWithZeroes(hours)}:${padWithZeroes(minutes)}:${padWithZeroes(seconds)}`
+				}
 
 				document.addEventListener('DOMContentLoaded', (event) => {
 					document.addEventListener("submit", (e) => {
@@ -676,7 +717,7 @@
 					//console.log("posts for route",post_id, data)
 					// there 2
 					if (data.length === 0) {
-						data = {post_id: []}
+						data = {post_id: post_id, comments: []}
 						//console.log(data)
 					}
 					else {
@@ -746,6 +787,7 @@
 
 				console.info("load", event)
 			})
+
 
 
 	</script>
