@@ -318,7 +318,7 @@
 			likedby.setAttribute('class', 'userlist')
 			div.appendChild(likedby)
 
-			let comments = document.createElement("dir")
+			let comments = document.createElement("div")
 			comments.setAttribute("class", "comments")
 			comments.setAttribute("data-postid", post.post_id)
 			div.appendChild(comments)	
@@ -398,27 +398,39 @@
 							const entry_node = relevant_post.parentElement.querySelector("h6").children[0]
 							let comment = document.createElement("code")
 							comment.textContent = _p.name + ": " + post.comment
+							let request = window.indexedDB.open("comments")
+							request.onerror = function (err) {
+								console.error("idb open err1", err)
+							}
+							request.onsuccess = function (event) {
+								let db = event.target.result
+								let tx = db.transaction("comments", "readwrite")
+								let store = tx.objectStore("comments")
+								let storeRequest = store.getAll()
+								storeRequest.onsuccess = function (ev) {
+									console.log("store request success callback, ev: ", ev.result, storeRequest.result, tx, store)
+									let sett = storeRequest.result
+									sett.forEach((record) => {
+										console.info(record.id, post.post_id, record.comments)
+										if (record.id === +post.post_id) {
+											record.comments.push({
+												comment_id: +post.comment_id,
+												post_id: +post.post_id,
+												user_id: +post.user_id,
+												comment: post.comment,
+												created_at: post.created_at
+											})
+											console.warn(record.comments)
+											const reqPut = store.put({id:  +post.post_id, comments: record.comments})
+											console.warn(reqPut, 'reqPut')
+										}
+									})
+								}
+							}
+							
+
 							entry_node.append(comment)
 							// insert comment into comment.objectStore("comment") with id post.post_id
-							let db;
-							let store;
-							let tx;
-							let request = window.indexedDB.open("comments")
-							request.addEventListener("success", (e) => {
-								db = e.target.result
-								tx = db.transaction("comments")
-								store = tx.objectStore("comments")
-								const all = store.get(post.post_id)
-								tx.addEventListener("success", () => {
-									console.info(all.result)
-									const d =  all.result
-									d.push(post)
-									store.put(post.post_id, d)
-								})
-							})
-							request.addEventListener("error", (error) => {
-								console.error("error here, CO sub", error)
-							})
 							
 						})
 				}
@@ -679,6 +691,7 @@
 
 				console.info("load", event)
 			})
+
 
 	</script>
 </head>
