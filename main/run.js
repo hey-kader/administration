@@ -281,7 +281,7 @@ app.get('/comments/*', (res, req) => {
 	})
 })
 
-app.listen (443, (listen) => {
+app.listen (443, "[2601:45:4000:83e0:1cd6:2547:36c8:3346]", (listen) => {
 	if (listen) {
 		console.log('listening')
 	}

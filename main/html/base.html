@@ -156,7 +156,7 @@
 			border-radius: 0px 0px 5px 5px;
 		}
 		time:hover {
-			display: flex;
+			display: table-cell;
 		}
 		time {
 			display: noone;
@@ -304,6 +304,7 @@
 				console.log(body)
 				window.socket.send(JSON.stringify(body))
 				e.target.parentElement.querySelector("input[type='search']").value = ''
+				e.target.parentElement.querySelector("input[type='search']").focus()
 				//e.target.parentElement.remove()
 			})
 		}
@@ -448,7 +449,7 @@
 						.then((_p) => {
 							console.log('_p',_p.name)
 
-							const entry_node = relevant_post.parentElement.querySelector("h6").children[0]
+							const entry_node = relevant_post.parentElement.querySelector(".comments")
 							let comment = document.createElement("code")
 							comment.textContent = _p.name + ": " + post.comment
 							comment.setAttribute("data-timestamp", Date.parse(Date.now()-Date.parse(post.created_at)))
@@ -491,7 +492,12 @@
 							}
 							
 
-							entry_node.append(comment)
+							let c = document.createElement("code")
+							c.textContent = post.name + ': '+post.comment
+							c.setAttribute("class", "comment-row")
+							c.setAttribute("data-postid", post.post_id)
+							entry_node.append(c)
+							node.append(entry_node)
 							// insert comment into comment.objectStore("comment") with id post.post_id
 							
 						})
@@ -589,6 +595,10 @@
 								//labell
 								let comment_label = document.createElement("h6")
 								comment_label.setAttribute("id", "comment_label")
+								let comment_node = document.createElement("div")
+								comment_node.setAttribute("class", "comments")
+								comment_label.appendChild(comment_node)
+								node.appendChild(comment_label)
 								// here, find the number of comments for post.post_id
 								let db;
 								let store;
@@ -613,15 +623,10 @@
 													let author = document.createElement('code')
 													let prom = users_db_get_user(+comment.user_id) 
 														prom.then((a) => {
-															author.textContent = a.name+': '+comment.comment
+															author.textContent = comment.name+': '+comment.comment
 															author.setAttribute("data-timestamp", comment.created_at)
+															author.setAttribute("data-comment_id", comment.comment_id)
 															author.setAttribute("class", "comment-row")
-															author.addEventListener("mouseleave", (event) => {
-																event.target.parentElement.querySelector("time").style.display = "none"
-															})
-															author.addEventListener("mouseenter", (event) => {
-																event.target.parentElement.querySelector("time").style.display = "table-row"
-															})
 														})
 													comments_div.appendChild(author)
 												})	
