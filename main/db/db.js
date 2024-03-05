@@ -100,6 +100,62 @@ else {
 	console.log("  this one alters table posts to have user_ids_liked default to []")
 }
 
+if (!fs.existsSync('./db/4.9.posts.sql.log')) {
+	sql = "DROP TABLE IF EXISTS comments;" 
+	pool.query(sql)
+		.then((r)=> {
+			console.log(r)
+			fs.writeFileSync("./db/4.9.posts.sql.log", "OK")
+		})
+}
+else {
+	console.log('4.9 drop aleady applied, ready for 5')
+}
+
+if (!fs.existsSync('./db/5.posts.sql.log')) {
+	const sql = `
+	CREATE TABLE comments (
+		comment_id SERIAL PRIMARY KEY,
+		comment TEXT NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		post_id INTEGER NOT NULL,
+		FOREIGN KEY (post_id) REFERENCES posts(post_id)
+		ON DELETE CASCADE,
+		user_id INTEGER NOT NULL,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+		ON DELETE CASCADE
+	)`
+	pool.query(sql)
+		.then((e) => {
+			console.log(e)
+			fs.writeFileSync('./db/5.posts.sql.log', 'OK')
+			console.log('patch 5 ok.')
+		})
+}
+else {
+	console.log('patch 5 already applied')
+}
+
+function drop_table(name) {
+	query = `DROP TABLE IF EXISTS ${name};`
+	pool.query(query, [name])
+		.then((res) => {
+			console.log(res)
+		})
+}
+
+function newComment(user_id, post_id, comment) {
+  const sql = `
+	INSERT INTO comments (user_id, post_id, comment)
+	VALUES ($1, $2, $3)
+	`
+	pool.query(sql, [user_id, post_id, comment])
+		.then((e) => {
+			console.log('comment in db')
+			console.log('resolve', e)
+		})
+}
+
 function likePost (user_id, post_id) {
 	const sql = `
 	UPDATE posts
@@ -128,7 +184,6 @@ async function newPost(name, text, color) {
 async function fetch_all_posts () {
 	const sql = `SELECT name, text, color, post_id, user_ids_liked, created_at FROM posts ORDER BY created_at DESC;`
 	const res = await pool.query(sql)
-	console.log(res)
 	return res
 }
 
@@ -215,6 +270,17 @@ async function getDigest (name) {
 	}
 }
 
+async function getComments(post_id) {
+	const sql = `SELECT * FROM comments
+	WHERE post_id = $1
+	ORDER BY created_at DESC;`
+	const res = await pool.query(sql, [post_id])
+	console.log(res)
+	return res
+}
+
+
+
 module.exports = {
   newUser: newUser,
   allUsers: fetch_all_users,
@@ -224,5 +290,7 @@ module.exports = {
 	newPost: newPost,
 	allPosts: fetch_all_posts,
 	likePost: likePost,
-	getUserID: get_userid
+	getUserID: get_userid,
+	newComment: newComment,
+	getComments: getComments
 }
