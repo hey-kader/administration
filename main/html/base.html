@@ -483,6 +483,9 @@
 							console.log(res.posts)
 								console.log(res.posts.length)
 								res.posts.forEach((post) => {
+								// create idb database "posts" with index post_id and user_id
+								// add index to comments database [objectStore] 
+								// write a function to put one post record in the objectStore
 								fetch_comments_by_postid(post.post_id)
 								let node = document.createElement('div')
 								node.setAttribute('class', 'flashcard')
