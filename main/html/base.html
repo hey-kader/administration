@@ -365,7 +365,7 @@
 		})
 
 		document.addEventListener('DOMContentLoaded', (event) => {
-			window.socket = new WebSocket('/latest')
+			window.socket = new WebSocket('wss:/localhost/latest')
 			window.socket.addEventListener('open', (event) => {
 				console.log('socket open', event)
 			})
