@@ -216,6 +216,10 @@ app.ws('/latest', {
 					})
 				})
 		}
+		else if (m.action === "comment") {
+			console.log('comment',m)
+			db.newComment(m.user_id, m.post_id, m.comment)
+		}
 		else {
 			live_connections.forEach((socket) => {
 				socket.send(msg, isBinary)
@@ -233,6 +237,29 @@ app.ws('/latest', {
 
 app.get('/', (res, req) => {
 	res.end(home)
+})
+
+app.get('/comments/*', (res, req) => {
+	let url = req.getUrl()
+	let parse = url.split('/')
+	let route = parse[2]
+	console.log(route)
+	res.cork( () => {
+		console.log("cork")
+		db.getComments(route)
+			.then((r) => {
+				console.log(url, route, r.rows)
+				if (r.rows.length > 0) {
+					res.end(JSON.stringify(r.rows))
+				}
+				else {
+					res.end(JSON.stringify([]))
+				}
+			})
+	})
+	res.onAborted(() => {
+		console.log('aborted handler comments get')
+	})
 })
 
 app.listen (443, (listen) => {

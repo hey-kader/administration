@@ -52,7 +52,7 @@
 			margin-left: 0px;
 			padding: 20px 0px 20px 0px;
 			border-radius: 10px 10px 0px 0px;
-			borderbottom: solid gray 1px;
+			border-bottom: solid gray 1px;
 		}
 		p {
 			padding-left: 0.5em;
@@ -93,6 +93,24 @@
 		ul {
 			list-style-type: none;
 			font-family: arial;
+		}
+		.message-container {
+			display: flex;
+			align-items: center;
+			border: none;
+		}
+		#messageInput {
+			flex-grow: 1;
+			border: none;
+		}
+		#messageInput:focus {
+			outline: none;
+		}
+		input[type="submit"] {
+			border: none;
+		}
+		button#sendButton {
+			margin-right: 5px;
 		}
 		
 	</style>
@@ -165,14 +183,14 @@
 					store = tx.objectStore("all")
 					const get_request = store.get(user_id)
 					get_request.addEventListener("success", () => {
-						console.log('success get single user', get_request)
+						//console.log('success get single user', get_request)
 						resolve(get_request.result)
 					})
 					get_request.addEventListener("error", (error) => {
 						console.error("idb get single user error", user_id, error)
 					})
 					tx.addEventListener("complete", () => {
-						console.log('completed.',get_request.result)
+						//console.log('completed.',get_request.result)
 						return get_request.result
 						db.close()
 					})
@@ -212,6 +230,30 @@
 					return records_obj
 			request.addEVentListener("error", (error) => {
 				console.error("idb error in users_db_batch_names", error)
+			})
+		}
+		function comment_btn_click (event) {
+			console.log(event)
+			event.target.outerHTML = `
+			<div class='comment-textarea message-container'>
+				<input id="messageInput" placeholder="comment ..." type="search" >
+				<button id="sendButton">&#x2191;</button>
+			</div>
+			`
+			document.body.querySelector("button#sendButton").addEventListener("click", (e) => {
+				console.log(e.target.parentElement)
+				let comment = e.target.parentElement.querySelector("input[type='search']").value
+				let post_id = e.target.parentElement.parentElement.querySelector("h5").textContent
+				let user_id = window.localStorage.getItem("id") 
+				const body = {
+					action: "comment",
+					user_id: user_id,
+					post_id: post_id,
+					comment: comment
+				}
+				console.log(body)
+				window.socket.send(JSON.stringify(body))
+				e.target.parentElement.remove()
 			})
 		}
 		function like_btn_click (event) {
@@ -258,11 +300,25 @@
 			likedby.setAttribute('class', 'userlist')
 			div.appendChild(likedby)
 
+			let comments = document.createElement("dir")
+			comments.setAttribute("class", "comments")
+			comments.setAttribute("data-postid", post.post_id)
+			div.appendChild(comments)	
+
 			let like_btn = document.createElement('input')
 			like_btn.setAttribute("type", "button")
 			like_btn.setAttribute("value", "like")
 			like_btn.addEventListener("click", like_btn_click)
+
+
 			div.appendChild(like_btn)
+
+			let comment_btn = document.createElement('input')
+			comment_btn.setAttribute('type', 'button')
+			comment_btn.setAttribute('value', 'comment')
+			comment_btn.addEventListener('click', comment_btn_click)
+			div.appendChild(comment_btn)
+
 
 			let selection = document.body.querySelector("#post-aggregation").firstElementChild
 			document.body.querySelector("#post-aggregation").insertBefore(div, selection)
@@ -355,11 +411,19 @@
 								like_btn.setAttribute('value', 'like')
 								like_btn.setAttribute('id', 'like_btn')
 								like_btn.addEventListener('click', like_btn_click)
-								node.appendChild(like_btn)
+
+								let comment_btn = document.createElement('input')
+								comment_btn.setAttribute('type', 'button')
+								comment_btn.setAttribute('value', 'comment')
+								comment_btn.setAttribute('id', 'comment_btn')
+								comment_btn.addEventListener('click', comment_btn_click)
+								node.appendChild(comment_btn)
+
 
 								let post_id = document.createElement('h5')
 								post_id.textContent = post.post_id
 								post_id.setAttribute("data-postid", post.post_id)
+								node.appendChild(like_btn)
 								
 								if (post.user_ids_liked) {
 									let post_likes = document.createElement('p')
@@ -372,7 +436,6 @@
 										//there	
 										const dbreq = users_db_get_user(id)
 										dbreq.then((record) => {
-											console.log('RECORD',record.name)
 											let li = document.createElement("li")
 											li.innerHTML = record.name
 											li.setAttribute('data-userid', id)
@@ -381,14 +444,15 @@
 									})
 									post.user_ids_liked.forEach((id) => {
 										if (id === +window.localStorage.getItem("id")) {
-											console.log('ok to disable like button here')
 											node.querySelector('#like_btn').setAttribute('disabled', 'true')
 										}
 									})
 									node.append(liked_by)
 								}
-
+								
 								node.appendChild(post_id)
+								node.appendChild(like_btn)
+								node.appendChild(comment_btn)
 
 								let dt = document.createElement('time')
 								function dtupdate () {
@@ -439,6 +503,71 @@
 							})
 						})
 				})
+	</script>
+	<script>
+		 function fetch_comments_by_postid (post_id) {
+			fetch("/comments/"+post_id, {
+				method: "get",
+				headers: {
+					"content-type": "application/json"
+				}
+			}).then(res => res.json())
+				.then((data) => {
+					console.log("posts for route",post_id, data)
+					for (let d of data) {
+						console.log("insert row to comments idb here")
+						console.log(d, post_id)
+						const interactionDBRequest = window.indexedDB.open("comments")
+						interactionDBRequest.addEventListener("success", (r) => {
+							console.log(r)
+							const db = r.target.result
+							let txn = db.transaction("comments", "readwrite")
+							console.log('txn',txn)
+							let store = txn.objectStore("comments")
+							console.info('store', store, post_id, data)
+							store.put({id: post_id, comments: data}).onsuccess = function () {
+								console.log('added comment to comments db comments object store ok')
+							}
+						})
+						interactionDBRequest.addEventListener("error", (error) => {
+							console.error ("interactionDBRequest to insert rows failed")
+						})
+					}
+				})
+			}
+
+			window.addEventListener("load", (event) => {
+				const interactionDB = window.indexedDB.open("comments", 2)
+				let db;
+				let store;
+				interactionDB.addEventListener("success", (e) => {
+					
+					console.info("comments for interaction db open success", e)
+					db = e.target.result
+					let tx = db.transaction("comments", "readwrite")
+					console.log(tx)
+					store = tx.objectStore("comments")
+					console.log('db success', tx, store)
+					db.close()
+				})
+				interactionDB.addEventListener("upgradeneeded", (e) => {
+					console.info("ineractionDB open upgrade neede event handler evocation!")
+					db = e.target.result
+					if (!db.objectStoreNames.contains("comments")) {
+						db.createObjectStore("comments", {keyPath: 'id'})
+						console.log('created comments object store')
+					}
+				})
+				interactionDB.addEventListener("error", (error) => {
+					console.error("idb ineraction db store error", error)
+				})
+
+				console.info("load", event)
+				for (let i = 1; i < 370; i++) {
+					fetch_comments_by_postid(i)
+				}
+			})
+
 	</script>
 </head>
 <body>
